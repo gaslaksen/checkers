@@ -61,21 +61,34 @@ const Sound = (() => {
     source.start(at);
   }
 
-  // Wood on wood: the sound every piece makes when it lands.
-  function knock(c, at, { pitch = 170, peak = 0.7, click = 0.35 } = {}) {
-    tone(c, at, { freq: pitch, slideTo: pitch * 0.55, type: 'sine', peak, duration: 0.13 });
-    tone(c, at, { freq: pitch * 4.5, slideTo: pitch * 2.5, type: 'triangle', peak: peak * 0.25, duration: 0.06 });
-    noise(c, at, { peak: click, duration: 0.045, filter: 2600, type: 'bandpass' });
+  // A checker landing on a wooden board: a sharp click of contact, then a few
+  // fixed resonances that die away within about a twentieth of a second.
+  // (Sliding a low tone downward instead would give you a bass drum.)
+  const PARTIALS = [[1, 1, 0.055], [1.63, 0.5, 0.045], [2.41, 0.28, 0.035], [3.74, 0.14, 0.025]];
+
+  function knock(c, at, { pitch = 880, peak = 0.55, click = 0.4 } = {}) {
+    // The contact itself: a very short tick, no pitch of its own.
+    noise(c, at, { peak: click, duration: 0.008, filter: 2200, type: 'bandpass' });
+    noise(c, at, { peak: click * 0.4, duration: 0.02, filter: 5000, type: 'highpass' });
+    // The piece and the board ringing — spaced unevenly, the way wood does.
+    for (const [mult, amp, duration] of PARTIALS) {
+      tone(c, at, { freq: pitch * mult, type: 'sine', peak: peak * amp, duration, attack: 0.001 });
+    }
+    // Just enough body to feel solid, gone before it can sound like a drum.
+    tone(c, at, { freq: 196, type: 'sine', peak: peak * 0.22, duration: 0.038, attack: 0.001 });
   }
+
+  // Real pieces never sound identical twice.
+  const vary = (base, amount = 0.07) => base * (1 + (Math.random() * 2 - 1) * amount);
 
   const SOUNDS = {
     // A piece being set down.
-    move: (c, at) => knock(c, at),
+    move: (c, at) => knock(c, at, { pitch: vary(880) }),
 
-    // Landing, plus the captured piece being knocked out of the way.
+    // Landing, plus the captured piece knocked aside a moment later.
     capture: (c, at) => {
-      knock(c, at, { pitch: 190, peak: 0.75, click: 0.4 });
-      knock(c, at + 0.075, { pitch: 120, peak: 0.45, click: 0.28 });
+      knock(c, at, { pitch: vary(940), peak: 0.6, click: 0.45 });
+      knock(c, at + 0.07, { pitch: vary(700), peak: 0.4, click: 0.3 });
     },
 
     // Picking up a piece.
@@ -90,7 +103,7 @@ const Sound = (() => {
 
     // A piece becomes a king: a little rising flourish over the knock.
     crown: (c, at) => {
-      knock(c, at, { pitch: 200, peak: 0.5 });
+      knock(c, at, { pitch: vary(820), peak: 0.55 });
       [523.25, 659.25, 783.99].forEach((freq, i) => {
         tone(c, at + 0.05 + i * 0.075, { freq, type: 'triangle', peak: 0.3, duration: 0.18 });
       });
