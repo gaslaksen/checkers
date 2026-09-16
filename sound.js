@@ -44,20 +44,37 @@ const Sound = (() => {
     osc.stop(at + duration + 0.05);
   }
 
-  // A burst of filtered noise — the click or scrape part of a sound.
-  function noise(c, at, { peak = 0.3, duration = 0.05, filter = 2000, type = 'lowpass' } = {}) {
+  function noiseBuffer(c, duration) {
     const frames = Math.ceil(c.sampleRate * duration);
     const buffer = c.createBuffer(1, frames, c.sampleRate);
     const data = buffer.getChannelData(0);
     for (let i = 0; i < frames; i++) data[i] = Math.random() * 2 - 1;
+    return buffer;
+  }
 
+  // A burst of filtered noise — the click or scrape part of a sound.
+  function noise(c, at, { peak = 0.3, duration = 0.05, filter = 2000, type = 'lowpass' } = {}) {
     const source = c.createBufferSource();
-    source.buffer = buffer;
+    source.buffer = noiseBuffer(c, duration);
     const band = c.createBiquadFilter();
     band.type = type;
     band.frequency.value = filter;
     source.connect(band);
     band.connect(gainNode(c, at, peak, duration));
+    source.start(at);
+  }
+
+  // Noise whose filter sweeps — the sound of something moving past you.
+  function swish(c, at, { from = 600, to = 2200, duration = 0.16, peak = 0.22 } = {}) {
+    const source = c.createBufferSource();
+    source.buffer = noiseBuffer(c, duration);
+    const band = c.createBiquadFilter();
+    band.type = 'bandpass';
+    band.Q.value = 1.8;
+    band.frequency.setValueAtTime(from, at);
+    band.frequency.exponentialRampToValueAtTime(to, at + duration);
+    source.connect(band);
+    band.connect(gainNode(c, at, peak, duration, 0.03));
     source.start(at);
   }
 
@@ -121,10 +138,67 @@ const Sound = (() => {
       });
     },
 
-    // Using an ability: a soft sweep, so it doesn't sound like a normal move.
+    // Using an ability: a soft sweep, for anything without its own sound.
     ability: (c, at) => {
       tone(c, at, { freq: 330, slideTo: 990, type: 'sine', peak: 0.3, duration: 0.22, attack: 0.02 });
       noise(c, at, { peak: 0.12, duration: 0.18, filter: 1400, type: 'highpass' });
+    },
+
+    // Sliding sideways: a scrape, then the piece settling.
+    abilitySidestep: (c, at) => {
+      swish(c, at, { from: 700, to: 1800, duration: 0.15, peak: 0.2 });
+      knock(c, at + 0.13, { pitch: vary(640), peak: 0.5 });
+    },
+
+    // Backing up: the same scrape, running the other way.
+    abilityRetreat: (c, at) => {
+      swish(c, at, { from: 1700, to: 650, duration: 0.16, peak: 0.2 });
+      knock(c, at + 0.14, { pitch: vary(560), peak: 0.5 });
+    },
+
+    // Two steps: two taps, the second a touch brighter.
+    abilityExtraStep: (c, at) => {
+      swish(c, at, { from: 800, to: 1500, duration: 0.1, peak: 0.13 });
+      knock(c, at + 0.02, { pitch: vary(600), peak: 0.45, click: 0.3 });
+      knock(c, at + 0.16, { pitch: vary(680), peak: 0.5, click: 0.35 });
+    },
+
+    // A bubble swelling into place.
+    abilityShield: (c, at) => {
+      tone(c, at, { freq: 392, slideTo: 784, type: 'sine', peak: 0.3, duration: 0.42, attack: 0.06 });
+      tone(c, at + 0.06, { freq: 587.33, type: 'triangle', peak: 0.18, duration: 0.36, attack: 0.08 });
+      noise(c, at, { peak: 0.1, duration: 0.4, filter: 900, type: 'highpass' });
+    },
+
+    // Frost: a glassy note falling, with a crackle.
+    abilityFreeze: (c, at) => {
+      tone(c, at, { freq: 2093, slideTo: 784, type: 'triangle', peak: 0.26, duration: 0.38 });
+      tone(c, at + 0.04, { freq: 1567.98, slideTo: 659.25, type: 'sine', peak: 0.16, duration: 0.34 });
+      for (let i = 0; i < 5; i++) {
+        noise(c, at + 0.05 + i * 0.05, { peak: 0.1, duration: 0.03, filter: 5200, type: 'highpass' });
+      }
+    },
+
+    // A shove: heavier and duller than a normal landing.
+    abilityPush: (c, at) => {
+      swish(c, at, { from: 900, to: 400, duration: 0.12, peak: 0.2 });
+      knock(c, at + 0.05, { pitch: vary(380), peak: 0.6, click: 0.3 });
+    },
+
+    // Two pieces blinking out and back in somewhere else.
+    abilitySwap: (c, at) => {
+      tone(c, at, { freq: 420, slideTo: 1900, type: 'triangle', peak: 0.26, duration: 0.11 });
+      noise(c, at + 0.02, { peak: 0.1, duration: 0.08, filter: 3000, type: 'highpass' });
+      tone(c, at + 0.2, { freq: 1900, slideTo: 460, type: 'triangle', peak: 0.26, duration: 0.13 });
+      noise(c, at + 0.2, { peak: 0.1, duration: 0.08, filter: 3000, type: 'highpass' });
+    },
+
+    // A piece coming back: rising sparkle, no knock.
+    abilityRevive: (c, at) => {
+      [523.25, 783.99, 1046.5].forEach((freq, i) => {
+        tone(c, at + i * 0.07, { freq, type: 'triangle', peak: 0.26, duration: 0.3, attack: 0.01 });
+      });
+      noise(c, at + 0.12, { peak: 0.08, duration: 0.3, filter: 4000, type: 'highpass' });
     },
 
     win: (c, at) => {

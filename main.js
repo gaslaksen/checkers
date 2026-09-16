@@ -89,6 +89,8 @@
   let pendingIntent = false; // online guest: waiting to hear back about a move
   let connectionLost = false; // online: the other player is gone
   let toastBuffer = null; // online host: messages to pass on to the guest
+  let soundBuffer = null; // online host: sounds to pass on to the guest
+  let netAction = null; // online host: the ability used, so the guest can show it
   let flipped = false; // draw the board from black's side
   let session = 0; // bumped on new game / menu so stale bot timers do nothing
   let selected = null; // [r, c] of the piece picked for a normal move
@@ -378,6 +380,8 @@
       lastPath = msg.path || lastPath;
       selected = game.chainPiece && isHuman(game.turn) ? game.chainPiece : null;
       render();
+      if (msg.action) abilityEffect(msg.action);
+      for (const name of msg.sounds || []) Sound.play(name);
       for (const event of msg.events || []) toast(event.text, event.tier);
       if (game.over) showResultSoon();
     }
@@ -391,7 +395,7 @@
       return;
     }
     if (game.over || game.turn === myColor) return; // not their turn
-    toastBuffer = [];
+    startTurnEvents();
     if (msg.kind === 'move') {
       const move = game.legalMoves().find((m) => isAt(m.from, ...msg.from) && isAt(m.to, ...msg.to));
       if (move) {
@@ -409,11 +413,20 @@
     broadcast();
   }
 
-  // Host: send the guest the new state, plus anything worth a message.
+  // Host: send the guest the new state, plus what to show and play.
   function broadcast() {
     if (mode !== 'online' || !isHost) return;
-    Net.send({ type: 'state', state: game.snapshot(), events: toastBuffer || [], path: lastPath });
+    Net.send({
+      type: 'state',
+      state: game.snapshot(),
+      events: toastBuffer || [],
+      sounds: soundBuffer || [],
+      action: netAction,
+      path: lastPath,
+    });
     toastBuffer = null;
+    soundBuffer = null;
+    netAction = null;
   }
 
   function onDisconnected() {
@@ -551,17 +564,20 @@
     broadcast();
   }
 
-  // Host: start collecting messages to pass on with the next state.
+  // Host: start collecting what to pass on with the next state.
   function startTurnEvents() {
-    if (mode === 'online' && isHost) toastBuffer = [];
+    if (mode !== 'online' || !isHost) return;
+    toastBuffer = [];
+    soundBuffer = [];
+    netAction = null;
   }
 
   // ---------- Game actions (shared by the human and the bot) ----------
 
   function applyHop(move) {
     const result = game.move(move);
-    Sound.play(result.captured ? 'capture' : 'move');
-    if (result.promoted) Sound.play('crown');
+    sfx(result.captured ? 'capture' : 'move');
+    if (result.promoted) sfx('crown');
     raise(result.piece);
     lastPath = lastPath.length && isAt(lastPath[lastPath.length - 1], ...move.from)
       ? [...lastPath, move.to]
@@ -572,7 +588,7 @@
   }
 
   function rewardToast({ color, ability, tier }, note) {
-    if (ability) Sound.play(`reward${tier[0].toUpperCase()}${tier.slice(1)}`);
+    if (ability) sfx(`reward${capitalize(tier)}`);
     if (!ability) {
       toast(`${label(color)}'s ${TIER_NAME[tier]} slots are full — reward lost`, tier);
       return;
@@ -584,8 +600,8 @@
   function useAbility(action) {
     const color = game.turn;
     const result = game.useAbility(action);
-    Sound.play('ability');
-    if (result.promoted || action.ability === 'crown') Sound.play('crown');
+    sfx(soundFor(action.ability));
+    if (result.promoted) sfx('crown');
     activeAbility = null;
     abilityPick = null;
     selected = null;
@@ -599,6 +615,8 @@
       toast(`${label(color)} used ${info.icon} ${info.name}`, tierOf(action.ability));
     }
     render();
+    abilityEffect(action);
+    if (mode === 'online' && isHost) netAction = action; // so the guest can animate it too
     if (game.turn !== color || game.over) afterTurn(result.skipped);
     return result;
   }
@@ -866,7 +884,173 @@
     }
   }
 
+  // ---------- Ability effects ----------
+
+  const DISPLAY_MS = 130; // one step of a two-step slide
+  const capitalize = (s) => s[0].toUpperCase() + s.slice(1);
+  const soundFor = (ability) => {
+    const name = `ability${capitalize(ability)}`;
+    return Sound.names.includes(name) ? name : 'ability';
+  };
+
+  const transformFor = ([r, c]) => {
+    const [dr, dc] = flipped ? [SIZE - 1 - r, SIZE - 1 - c] : [r, c];
+    return `translate(${dc * 100}%, ${dr * 100}%)`;
+  };
+
+  const elementAt = ([r, c]) => {
+    const piece = game.board[r][c];
+    return piece ? pieceEls.get(piece.id) : null;
+  };
+
+  const discOf = (el) => el && el.querySelector('.disc');
+
+  function animate(el, keyframes, options) {
+    const disc = discOf(el);
+    if (disc && disc.animate) disc.animate(keyframes, options);
+  }
+
+  // Slides a piece through each square in turn instead of straight to the end.
+  function slidePath(el, path) {
+    if (!el) return;
+    el.style.transition = 'none';
+    el.style.transform = transformFor(path[0]);
+    void el.offsetWidth; // let the browser see the starting point
+    el.style.transition = `transform ${DISPLAY_MS}ms ease-in`;
+    el.style.transform = transformFor(path[1]);
+    setTimeout(() => {
+      el.style.transition = `transform ${DISPLAY_MS}ms ease-out`;
+      el.style.transform = transformFor(path[2]);
+    }, DISPLAY_MS);
+    setTimeout(() => {
+      el.style.transition = '';
+    }, DISPLAY_MS * 2 + 40);
+  }
+
+  // Blinks a piece out where it was and back in where it's going.
+  function teleport(el, from, to) {
+    if (!el) return;
+    el.style.transition = 'none';
+    el.style.transform = transformFor(from);
+    void el.offsetWidth;
+    animate(el, [
+      { opacity: 1, transform: 'scale(1)', filter: 'brightness(1)' },
+      { opacity: 0, transform: 'scale(0.2)', filter: 'brightness(2.4)', offset: 0.42 },
+      { opacity: 0, transform: 'scale(0.2)', filter: 'brightness(2.4)', offset: 0.58 },
+      { opacity: 1, transform: 'scale(1)', filter: 'brightness(1)' },
+    ], { duration: 420, easing: 'ease-in-out' });
+    setTimeout(() => {
+      el.style.transform = transformFor(to);
+    }, 210);
+    setTimeout(() => {
+      el.style.transition = '';
+    }, 450);
+  }
+
+  // The empty square an Extra Step passes through: one diagonal step from
+  // where it started, and one more to where it ends up.
+  function middleSquare([sr, sc], [dr, dc]) {
+    for (const [mr, mc] of [[sr - 1, sc - 1], [sr - 1, sc + 1], [sr + 1, sc - 1], [sr + 1, sc + 1]]) {
+      const reachesEnd = Math.abs(mr - dr) === 1 && Math.abs(mc - dc) === 1;
+      if (reachesEnd && game.isEmpty(mr, mc)) return [mr, mc];
+    }
+    return null;
+  }
+
+  // Runs the animation for an ability. Works out which pieces are involved
+  // from the board as it is now, so it runs the same for both players online.
+  function abilityEffect(action) {
+    const { ability, select, dest } = action;
+    const moved = dest ? elementAt(dest) : elementAt(select);
+    switch (ability) {
+      case 'sidestep':
+        animate(moved, [
+          { transform: 'scale(1, 1)' },
+          { transform: 'scale(1.18, 0.85)', offset: 0.35 },
+          { transform: 'scale(1, 1)' },
+        ], { duration: 280, easing: 'ease-out' });
+        break;
+
+      case 'retreat':
+        animate(moved, [
+          { transform: 'rotate(0) translateY(0)' },
+          { transform: 'rotate(-14deg) translateY(-8%)', offset: 0.4 },
+          { transform: 'rotate(0) translateY(0)' },
+        ], { duration: 320, easing: 'ease-out' });
+        break;
+
+      case 'extraStep': {
+        const mid = middleSquare(select, dest);
+        if (mid) slidePath(moved, [select, mid, dest]);
+        animate(moved, [
+          { transform: 'scale(1, 1)' },
+          { transform: 'scale(0.92, 1.1)', offset: 0.25 },
+          { transform: 'scale(1.1, 0.9)', offset: 0.6 },
+          { transform: 'scale(1, 1)' },
+        ], { duration: DISPLAY_MS * 2 + 60, easing: 'ease-in-out' });
+        break;
+      }
+
+      case 'swap':
+        teleport(moved, select, dest);
+        teleport(elementAt(select), dest, select);
+        break;
+
+      case 'push':
+        if (moved) {
+          moved.style.transition = 'transform 160ms cubic-bezier(0.2, 0.9, 0.3, 1.4)';
+          setTimeout(() => { moved.style.transition = ''; }, 220);
+        }
+        animate(moved, [
+          { transform: 'scale(1, 1)' },
+          { transform: 'scale(0.84, 1.14)', offset: 0.3 },
+          { transform: 'scale(1, 1)' },
+        ], { duration: 300, easing: 'ease-out' });
+        break;
+
+      case 'shield':
+        animate(moved, [
+          { transform: 'scale(1)', filter: 'brightness(1)' },
+          { transform: 'scale(1.25)', filter: 'brightness(1.5)', offset: 0.4 },
+          { transform: 'scale(1)', filter: 'brightness(1)' },
+        ], { duration: 460, easing: 'ease-out' });
+        break;
+
+      case 'freeze':
+        animate(moved, [
+          { transform: 'translateX(0)' },
+          { transform: 'translateX(-6%)', offset: 0.2 },
+          { transform: 'translateX(6%)', offset: 0.4 },
+          { transform: 'translateX(-3%)', offset: 0.65 },
+          { transform: 'translateX(0)' },
+        ], { duration: 420, easing: 'ease-out' });
+        break;
+
+      case 'crown':
+        animate(moved, [
+          { transform: 'scale(1)', filter: 'brightness(1)' },
+          { transform: 'scale(1.3)', filter: 'brightness(2)', offset: 0.35 },
+          { transform: 'scale(1)', filter: 'brightness(1)' },
+        ], { duration: 520, easing: 'ease-out' });
+        break;
+
+      case 'revive':
+        animate(moved, [
+          { opacity: 0, transform: 'scale(0.2)', filter: 'brightness(2.2)' },
+          { opacity: 1, transform: 'scale(1.18)', filter: 'brightness(1.5)', offset: 0.65 },
+          { opacity: 1, transform: 'scale(1)', filter: 'brightness(1)' },
+        ], { duration: 520, easing: 'ease-out' });
+        break;
+    }
+  }
+
   // ---------- Effects ----------
+
+  // Plays a sound, and remembers it for the other device when hosting online.
+  function sfx(name) {
+    if (soundBuffer) soundBuffer.push(name);
+    Sound.play(name);
+  }
 
   function toast(text, tier) {
     if (toastBuffer) toastBuffer.push({ text, tier }); // passed on to the other device
