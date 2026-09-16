@@ -184,6 +184,16 @@
     });
   }
   for (const btn of document.querySelectorAll('.to-menu')) btn.addEventListener('click', askLeaveGame);
+  for (const btn of document.querySelectorAll('.sound-toggle')) {
+    btn.addEventListener('click', () => {
+      Sound.setEnabled(!Sound.isEnabled());
+      renderSoundButtons();
+    });
+  }
+  // Menu buttons and the like get a quiet tick.
+  document.addEventListener('click', (e) => {
+    if (e.target.closest('.menu-btn, .menu-back, .to-menu, #join-game')) Sound.play('click');
+  });
   document.getElementById('confirm-yes').addEventListener('click', () => {
     confirmEl.hidden = true;
     showMenu();
@@ -463,6 +473,7 @@
 
     const canMove = moves.some((m) => isAt(m.from, r, c));
     selected = canMove && !isAt(selected, r, c) ? [r, c] : null;
+    if (selected) Sound.play('select');
     render();
   }
 
@@ -549,6 +560,8 @@
 
   function applyHop(move) {
     const result = game.move(move);
+    Sound.play(result.captured ? 'capture' : 'move');
+    if (result.promoted) Sound.play('crown');
     raise(result.piece);
     lastPath = lastPath.length && isAt(lastPath[lastPath.length - 1], ...move.from)
       ? [...lastPath, move.to]
@@ -559,6 +572,7 @@
   }
 
   function rewardToast({ color, ability, tier }, note) {
+    if (ability) Sound.play(`reward${tier[0].toUpperCase()}${tier.slice(1)}`);
     if (!ability) {
       toast(`${label(color)}'s ${TIER_NAME[tier]} slots are full — reward lost`, tier);
       return;
@@ -570,6 +584,8 @@
   function useAbility(action) {
     const color = game.turn;
     const result = game.useAbility(action);
+    Sound.play('ability');
+    if (result.promoted || action.ability === 'crown') Sound.play('crown');
     activeAbility = null;
     abilityPick = null;
     selected = null;
@@ -709,8 +725,17 @@
     }
 
     renderStatus();
+    renderSoundButtons();
     renderPanel(RED);
     renderPanel(BLACK);
+  }
+
+  function renderSoundButtons() {
+    const on = Sound.isEnabled();
+    for (const btn of document.querySelectorAll('.sound-toggle')) {
+      btn.textContent = on ? '🔊' : '🔇';
+      btn.setAttribute('aria-pressed', String(on));
+    }
   }
 
   function renderStatus() {
@@ -817,6 +842,7 @@
     document.getElementById('play-again').hidden = false;
     resultEl.classList.toggle('lost', lost);
     resultEl.hidden = false;
+    Sound.play(game.drawn ? 'draw' : lost ? 'lose' : 'win');
     if (!lost && !game.drawn) launchConfetti();
     document.getElementById('play-again').focus();
   }

@@ -207,6 +207,12 @@ button {
 
 .actions button { white-space: nowrap; }
 
+.sound-toggle {
+  padding: 8px 10px;
+  font-size: 1rem;
+  line-height: 1;
+}
+
 @media (max-width: 420px) {
   .status { font-size: 1rem; gap: 8px; }
   .actions { gap: 6px; }
