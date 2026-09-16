@@ -64,9 +64,9 @@ const Sound = (() => {
   // A checker landing on a wooden board: a sharp click of contact, then a few
   // fixed resonances that die away within about a twentieth of a second.
   // (Sliding a low tone downward instead would give you a bass drum.)
-  const PARTIALS = [[1, 1, 0.055], [1.63, 0.5, 0.045], [2.41, 0.28, 0.035], [3.74, 0.14, 0.025]];
+  const PARTIALS = [[1, 1, 0.085], [1.63, 0.5, 0.07], [2.41, 0.28, 0.05], [3.74, 0.14, 0.035]];
 
-  function knock(c, at, { pitch = 880, peak = 0.55, click = 0.4 } = {}) {
+  function knock(c, at, { pitch = 620, peak = 0.55, click = 0.4 } = {}) {
     // The contact itself: a very short tick, no pitch of its own.
     noise(c, at, { peak: click, duration: 0.008, filter: 2200, type: 'bandpass' });
     noise(c, at, { peak: click * 0.4, duration: 0.02, filter: 5000, type: 'highpass' });
@@ -75,7 +75,7 @@ const Sound = (() => {
       tone(c, at, { freq: pitch * mult, type: 'sine', peak: peak * amp, duration, attack: 0.001 });
     }
     // Just enough body to feel solid, gone before it can sound like a drum.
-    tone(c, at, { freq: 196, type: 'sine', peak: peak * 0.22, duration: 0.038, attack: 0.001 });
+    tone(c, at, { freq: 175, type: 'sine', peak: peak * 0.22, duration: 0.05, attack: 0.001 });
   }
 
   // Real pieces never sound identical twice.
@@ -83,12 +83,12 @@ const Sound = (() => {
 
   const SOUNDS = {
     // A piece being set down.
-    move: (c, at) => knock(c, at, { pitch: vary(880) }),
+    move: (c, at) => knock(c, at, { pitch: vary(620) }),
 
     // Landing, plus the captured piece knocked aside a moment later.
     capture: (c, at) => {
-      knock(c, at, { pitch: vary(940), peak: 0.6, click: 0.45 });
-      knock(c, at + 0.07, { pitch: vary(700), peak: 0.4, click: 0.3 });
+      knock(c, at, { pitch: vary(670), peak: 0.6, click: 0.45 });
+      knock(c, at + 0.075, { pitch: vary(500), peak: 0.4, click: 0.3 });
     },
 
     // Picking up a piece.
@@ -103,7 +103,7 @@ const Sound = (() => {
 
     // A piece becomes a king: a little rising flourish over the knock.
     crown: (c, at) => {
-      knock(c, at, { pitch: vary(820), peak: 0.55 });
+      knock(c, at, { pitch: vary(580), peak: 0.55 });
       [523.25, 659.25, 783.99].forEach((freq, i) => {
         tone(c, at + 0.05 + i * 0.075, { freq, type: 'triangle', peak: 0.3, duration: 0.18 });
       });
