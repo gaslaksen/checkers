@@ -1,0 +1,134 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Super Checkers</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <section id="menu" class="menu">
+    <div class="menu-tokens" aria-hidden="true">
+      <div class="token black"><div class="disc"></div></div>
+      <div class="token red king"><div class="disc">
+        <svg class="crown" viewBox="0 0 24 24"><path d="M3 18.5h18L19.6 8l-4.6 4.2L12 5l-3 7.2L4.4 8z"/></svg>
+      </div></div>
+    </div>
+    <h1 class="title"><span class="title-super">Super</span><span class="title-main">Checkers</span></h1>
+    <div id="menu-main" class="menu-buttons">
+      <button id="play-bot" type="button" class="menu-btn primary">Play vs Bot</button>
+      <button id="open-multiplayer" type="button" class="menu-btn">
+        Multiplayer
+        <small>Play against a person</small>
+      </button>
+    </div>
+    <div id="menu-multiplayer" class="menu-buttons" hidden>
+      <p class="menu-label">Multiplayer</p>
+      <button id="play-local" type="button" class="menu-btn">
+        Same Device
+        <small>Take turns on this screen</small>
+      </button>
+      <button id="open-online" type="button" class="menu-btn">
+        Play Online
+        <small>Share a code with a friend</small>
+      </button>
+      <button type="button" class="menu-back" data-back="main">Back</button>
+    </div>
+    <div id="menu-online" class="menu-buttons" hidden>
+      <p class="menu-label">Play Online</p>
+      <button id="create-game" type="button" class="menu-btn primary">
+        Create Game
+        <small>Get a code to share</small>
+      </button>
+      <button id="open-join" type="button" class="menu-btn">
+        Join Game
+        <small>Enter a friend's code</small>
+      </button>
+      <button type="button" class="menu-back" data-back="multiplayer">Back</button>
+    </div>
+    <div id="menu-create" class="menu-buttons" hidden>
+      <p class="menu-label">Your code</p>
+      <div id="code-display" class="code-display">····</div>
+      <p id="create-status" class="menu-note">Getting a code…</p>
+      <button type="button" class="menu-back" data-back="online">Cancel</button>
+    </div>
+    <div id="menu-join" class="menu-buttons" hidden>
+      <p class="menu-label">Enter the code</p>
+      <input id="code-input" class="code-input" type="text" inputmode="latin" autocomplete="off"
+        autocapitalize="characters" spellcheck="false" maxlength="4" placeholder="CODE" aria-label="Game code">
+      <button id="join-game" type="button" class="menu-btn primary">Join</button>
+      <p id="join-status" class="menu-note"></p>
+      <button type="button" class="menu-back" data-back="online">Back</button>
+    </div>
+    <div id="menu-difficulty" class="menu-buttons" hidden>
+      <p class="menu-label">Choose difficulty</p>
+      <button type="button" class="menu-btn level-easy" data-level="easy">
+        Easy
+        <small>Still learning</small>
+      </button>
+      <button type="button" class="menu-btn level-normal" data-level="normal">
+        Normal
+        <small>A fair fight</small>
+      </button>
+      <button type="button" class="menu-btn level-hard" data-level="hard">
+        Hard
+        <small>Thinks far ahead</small>
+      </button>
+      <button id="menu-back" type="button" class="menu-back">Back</button>
+    </div>
+  </section>
+
+  <main id="game" class="game" hidden>
+    <div id="bar-top" class="status-bar">
+      <div class="status" aria-live="polite"></div>
+      <div class="actions">
+        <button type="button" class="to-menu">Menu</button>
+      </div>
+    </div>
+    <div id="panel-black" class="panel" data-color="black"></div>
+    <div class="board">
+      <div id="squares" class="squares"></div>
+      <div id="pieces" class="pieces"></div>
+      <div id="toasts" class="toasts" aria-live="polite"></div>
+    </div>
+    <div id="panel-red" class="panel" data-color="red"></div>
+    <div id="bar-bottom" class="status-bar">
+      <div class="status" aria-live="polite"></div>
+      <div class="actions">
+        <button type="button" class="to-menu">Menu</button>
+      </div>
+    </div>
+  </main>
+
+  <div id="confirm" class="result" hidden>
+    <div class="result-card" role="dialog" aria-labelledby="confirm-title">
+      <h2 id="confirm-title" class="result-title dialog-title">Go to the menu?</h2>
+      <p id="confirm-sub" class="result-sub"></p>
+      <div class="menu-buttons">
+        <button id="confirm-yes" type="button" class="menu-btn primary">Go to menu</button>
+        <button id="confirm-no" type="button" class="menu-btn">Keep playing</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="result" class="result" hidden>
+    <div id="confetti" class="confetti" aria-hidden="true"></div>
+    <div class="result-card" role="dialog" aria-labelledby="result-title">
+      <div id="result-tokens" class="result-tokens" aria-hidden="true"></div>
+      <h2 id="result-title" class="result-title"></h2>
+      <p id="result-sub" class="result-sub"></p>
+      <div class="menu-buttons">
+        <button id="play-again" type="button" class="menu-btn primary">Play again</button>
+        <button id="result-menu" type="button" class="menu-btn">Menu</button>
+      </div>
+      <button id="view-board" type="button" class="menu-back">View board</button>
+    </div>
+  </div>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/peerjs/1.5.5/peerjs.min.js"></script>
+  <script src="game.js"></script>
+  <script src="bot.js"></script>
+  <script src="net.js"></script>
+  <script src="main.js"></script>
+</body>
+</html>
