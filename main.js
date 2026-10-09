@@ -173,6 +173,8 @@
   window.addEventListener('pagehide', () => Net.sayGoodbye());
 
   document.getElementById('play-bot').addEventListener('click', () => showMenuPage('difficulty'));
+  document.getElementById('how-to-play').addEventListener('click', showGuide);
+  document.getElementById('share-code').addEventListener('click', shareCode);
   document.getElementById('open-multiplayer').addEventListener('click', () => showMenuPage('multiplayer'));
   document.getElementById('play-local').addEventListener('click', () => startGame('local'));
   document.getElementById('open-online').addEventListener('click', () => showMenuPage('online'));
@@ -253,6 +255,7 @@
     // sitting opposite, and each side gets its own status bar and Menu button.
     gameEl.classList.toggle('hotseat', mode === 'local');
     gameEl.classList.toggle('solo-view', mode !== 'local');
+    gameEl.classList.toggle('online', mode === 'online');
     menuEl.hidden = true;
     gameEl.hidden = false;
     render();
@@ -283,6 +286,7 @@
   function showMenu() {
     session++;
     confirmEl.hidden = true;
+    reactionsEl.hidden = true;
     leaveOnline();
     hideResult();
     showMenuPage('main');
@@ -361,12 +365,36 @@
     }
   }
 
+  // Hands the code and a link to whatever the phone or browser offers —
+  // messages, mail, or just the clipboard.
+  async function shareCode() {
+    const code = codeDisplayEl.textContent.trim();
+    if (!/^[A-Z0-9]+$/.test(code)) return;
+    const url = location.href.split('?')[0].split('#')[0];
+    const text = `Play Super Checkers with me — join with code ${code}: ${url}`;
+    try {
+      if (navigator.share) {
+        await navigator.share({ title: 'Super Checkers', text, url });
+        return;
+      }
+      await navigator.clipboard.writeText(text);
+      setNote(createStatusEl, 'Copied — paste it to your friend.');
+    } catch (e) {
+      if (e && e.name === 'AbortError') return; // they closed the share sheet
+      setNote(createStatusEl, `Couldn't share automatically — your code is ${code}.`, true);
+    }
+  }
+
   function onNetMessage(msg, asHost) {
     if (!msg || typeof msg !== 'object') return;
     if (msg.type === 'full') {
       setNote(joinStatusEl, 'That game already has two players.', true);
       leaveOnline();
       showMenuPage('online');
+      return;
+    }
+    if (msg.type === 'react') {
+      showReaction(opponent(myColor), msg.emoji);
       return;
     }
     if (asHost) {
@@ -414,6 +442,8 @@
       }
     } else if (msg.kind === 'ability') {
       useAbility(msg.action);
+    } else if (msg.kind === 'reward') {
+      applyReward(opponent(myColor), msg.ability, msg.replace || null);
     } else if (msg.kind === 'endTurn' && game.chainPiece) {
       const skipped = game.endTurn();
       render();
@@ -596,14 +626,10 @@
     return result;
   }
 
-  function rewardToast({ color, ability, tier }, note) {
-    if (ability) sfx(`reward${capitalize(tier)}`);
-    if (!ability) {
-      toast(`${label(color)}'s ${TIER_NAME[tier]} slots are full — reward lost`, tier);
-      return;
-    }
-    const info = ABILITY_INFO[ability];
-    toast(`${label(color)} earned ${info.icon} ${info.name}${note}`, tier);
+  // A jump earns a choice, made at the start of that player's next turn.
+  function rewardToast({ color, tier }, note) {
+    sfx(`reward${capitalize(tier)}`);
+    toast(`${label(color)} earned a ${TIER_NAME[tier]} ability${note}`, tier);
   }
 
   function useAbility(action) {
@@ -663,6 +689,12 @@
     // time spent thinking counts toward BOT_DELAY.
     setTimeout(() => {
       if (mySession !== session) return;
+      // Take any reward it has earned first — it can't move until it has.
+      while (game.pendingReward(BOT_COLOR)) {
+        const choice = Bot.chooseReward(game, BOT_COLOR);
+        if (!applyReward(BOT_COLOR, choice.ability, choice.replace || null)) break;
+      }
+      if (game.over || !isBotTurn()) return;
       const started = Date.now();
       const { action, hops } = Bot.chooseTurn(game, botLevel);
       const steps = action ? [{ action }, ...hops] : hops;
@@ -753,6 +785,7 @@
 
     renderStatus();
     renderSoundButtons();
+    maybeShowReward();
     renderPanel(RED);
     renderPanel(BLACK);
   }
@@ -914,10 +947,181 @@
     }
   }
 
+  // ---------- Installing to the home screen ----------
+
+  const installBtn = document.getElementById('install-app');
+  let installPrompt = null;
+
+  // Chrome and friends offer this; iOS doesn't, so there the guide explains
+  // the Share → Add to Home Screen route instead.
+  window.addEventListener('beforeinstallprompt', (e) => {
+    e.preventDefault();
+    installPrompt = e;
+    installBtn.hidden = false;
+  });
+
+  installBtn.addEventListener('click', async () => {
+    if (!installPrompt) return;
+    installPrompt.prompt();
+    await installPrompt.userChoice;
+    installPrompt = null;
+    installBtn.hidden = true;
+  });
+
+  window.addEventListener('appinstalled', () => {
+    installPrompt = null;
+    installBtn.hidden = true;
+  });
+
+  if ('serviceWorker' in navigator) {
+    window.addEventListener('load', () => {
+      navigator.serviceWorker.register('sw.js').catch(() => {
+        // Offline play just won't be available; the game still works.
+      });
+    });
+  }
+
+  // ---------- Quick reactions ----------
+
+  const reactionsEl = document.getElementById('reactions');
+
+  for (const btn of document.querySelectorAll('.react-toggle')) {
+    btn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      if (!reactionsEl.hidden) {
+        reactionsEl.hidden = true;
+        return;
+      }
+      // Open it next to whichever button was tapped.
+      const box = btn.getBoundingClientRect();
+      reactionsEl.hidden = false;
+      const menu = reactionsEl.getBoundingClientRect();
+      const below = box.bottom + 8 + menu.height < innerHeight;
+      reactionsEl.style.top = `${below ? box.bottom + 8 : box.top - menu.height - 8}px`;
+      reactionsEl.style.left = `${Math.max(8, Math.min(box.right - menu.width, innerWidth - menu.width - 8))}px`;
+    });
+  }
+
+  reactionsEl.addEventListener('click', (e) => {
+    const btn = e.target.closest('[data-react]');
+    if (!btn) return;
+    reactionsEl.hidden = true;
+    showReaction(myColor, btn.dataset.react);
+    Net.send({ type: 'react', emoji: btn.dataset.react });
+  });
+
+  document.addEventListener('click', (e) => {
+    if (!reactionsEl.hidden && !e.target.closest('.reactions, .react-toggle')) reactionsEl.hidden = true;
+  });
+
+  // Floats an emoji up from that player's panel.
+  function showReaction(color, emoji) {
+    if (typeof emoji !== 'string' || emoji.length > 8) return;
+    const el = document.createElement('div');
+    el.className = 'reaction-float';
+    el.textContent = emoji;
+    panelEls[color].appendChild(el);
+    Sound.play('click');
+    setTimeout(() => el.remove(), 1700);
+  }
+
+  // ---------- Choosing a reward ----------
+
+  const rewardEl = document.getElementById('reward');
+  let rewardPick = null; // the ability chosen, while deciding what it replaces
+
+  document.getElementById('reward-skip').addEventListener('click', () => sendReward(null));
+  document.getElementById('reward-options').addEventListener('click', (e) => {
+    const btn = e.target.closest('[data-ability]');
+    if (btn) pickReward(btn.dataset.ability);
+  });
+  document.getElementById('reward-held').addEventListener('click', (e) => {
+    const btn = e.target.closest('[data-ability]');
+    if (btn) sendReward(rewardPick, btn.dataset.ability);
+  });
+
+  const optionButton = (id) => {
+    const info = ABILITY_INFO[id];
+    return `<button type="button" class="reward-option tier-${tierOf(id)}" data-ability="${id}">
+      <span class="icon" aria-hidden="true">${info.icon}</span>
+      <span class="name">${info.name}</span>
+      <span class="what">${info.help}</span></button>`;
+  };
+
+  // Shows the choice when one is waiting for whoever is playing on this device.
+  function maybeShowReward() {
+    const offer = game.pendingReward(game.turn);
+    if (!offer || !isHuman(game.turn) || connectionLost) {
+      rewardEl.hidden = true;
+      return;
+    }
+    rewardPick = null;
+    const full = game.tierCount(offer.color, offer.tier) >= TIER_LIMITS[offer.tier];
+    document.getElementById('reward-sub').textContent = full
+      ? `Your ${TIER_NAME[offer.tier]} slots are full — take one of these in place of one you hold, or keep what you have.`
+      : `You earned a ${TIER_NAME[offer.tier]} ability. Pick one.`;
+    document.getElementById('reward-options').innerHTML = offer.options.map(optionButton).join('');
+    document.getElementById('reward-swap').hidden = true;
+    document.getElementById('reward-skip').textContent = full ? 'Keep what I have' : 'No thanks';
+    rewardEl.hidden = false;
+  }
+
+  function pickReward(ability) {
+    const offer = game.pendingReward(game.turn);
+    if (!offer) return;
+    if (game.tierCount(offer.color, offer.tier) < TIER_LIMITS[offer.tier]) {
+      sendReward(ability);
+      return;
+    }
+    // That tier is full, so something has to go.
+    rewardPick = ability;
+    const held = ABILITY_IDS.filter((id) => tierOf(id) === offer.tier && game.inventory[offer.color][id] > 0);
+    document.getElementById('reward-held').innerHTML = held.map(optionButton).join('');
+    document.getElementById('reward-swap').hidden = false;
+  }
+
+  function sendReward(ability, replace = null) {
+    if (isGuest()) {
+      Net.send({ type: 'intent', kind: 'reward', ability, replace });
+      rewardEl.hidden = true;
+      pendingIntent = true;
+      return;
+    }
+    startTurnEvents();
+    applyReward(game.turn, ability, replace);
+    broadcast();
+  }
+
+  // Applies a choice and says what happened, wherever it came from.
+  function applyReward(color, ability, replace) {
+    const result = game.chooseReward(color, ability, replace);
+    if (!result) return false;
+    rewardEl.hidden = true;
+    if (result.ability) {
+      const info = ABILITY_INFO[result.ability];
+      sfx(`reward${capitalize(result.tier)}`);
+      const swapped = result.replaced ? ` instead of ${ABILITY_INFO[result.replaced].name}` : '';
+      toast(`${label(color)} took ${info.icon} ${info.name}${swapped}`, result.tier);
+    } else {
+      toast(`${label(color)} passed on a ${TIER_NAME[result.tier]} ability`, result.tier);
+    }
+    render();
+    return true;
+  }
+
   // ---------- Ability guide ----------
 
   const guideEl = document.getElementById('guide');
   document.getElementById('guide-close').addEventListener('click', () => { guideEl.hidden = true; });
+
+  const RULES = [
+    'Red moves first. Tap one of your pieces, then a highlighted square.',
+    'Jumping is optional — you never have to capture, and you can stop a multi-jump whenever you like.',
+    'Reach the far row and your piece becomes a king, which can also move backwards.',
+    'You win by capturing every enemy piece, or leaving your opponent with no move.',
+    `It's a draw after 40 moves each with no capture and no new king.`,
+    'To keep it on your phone: Android — Install from the menu; iPhone — Share, then Add to Home Screen.',
+  ];
 
   function showGuide() {
     const rows = ['common', 'rare', 'epic'].map((tier) => {
@@ -931,10 +1135,13 @@
     }).join('');
 
     document.getElementById('guide-body').innerHTML = `
+      <h3 class="guide-tier">The game</h3>
+      <ul class="guide-list plain">${RULES.map((r) => `<li>${r}</li>`).join('')}</ul>
+      <h3 class="guide-tier">Abilities</h3>
       <p class="guide-intro">Every piece you jump earns a random ability:
         ${REWARD_TRACK.map((t) => TIER_NAME[t]).join(', ')}, then it repeats.
         Lose ${COMEBACK_EVERY} pieces and you get the next one anyway.
-        You can use one ability per turn, at the start of your turn.</p>
+        You pick one of two, and you can use one ability per turn, at the start of your turn.</p>
       ${rows}`;
     guideEl.hidden = false;
     document.getElementById('guide-close').focus();

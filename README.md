@@ -11,14 +11,19 @@ Checkers where jumping pieces earns you abilities.
   half of the screen is turned around for the player sitting opposite.
 - **Multiplayer → Play Online** — one player creates a game and gets a 4-letter
   code; the other joins with it. The two browsers connect directly to each
-  other, so there's no server and nothing to install.
+  other, so there's no server and nothing to install. Quick emoji reactions
+  included.
+
+**How to Play** on the menu explains the rules and every ability. The game
+installs to a phone home screen and works offline against the bot.
 
 ## Rules
 
 Standard American checkers, except **jumping is optional** — you never have to
 capture, and you can stop a multi-jump whenever you like.
 
-Every jump earns a random ability. Rewards follow a track that repeats:
+Every jump earns an ability — you pick one of two. Rewards follow a track that
+repeats:
 
 | Jump | 1 | 2 | 3 | 4 | 5 |
 |---|---|---|---|---|---|
@@ -26,7 +31,8 @@ Every jump earns a random ability. Rewards follow a track that repeats:
 
 Losing pieces fills a **comeback meter**; jumping a piece empties it by one. At
 2, you get the next reward on your track, so falling behind isn't hopeless. You
-can hold at most 3 Common, 2 Rare and 1 Epic.
+can hold at most 3 Common, 2 Rare and 1 Epic — when a tier is full, a new
+ability can be swapped for one you hold, or turned down.
 
 ### Abilities
 
@@ -56,3 +62,5 @@ locally (online play needs the https address above).
 - `bot.js` — the computer opponent
 - `net.js` — online play
 - `main.js` — screens, board and input
+- `sound.js` — sound effects, synthesized in code
+- `sw.js`, `manifest.json` — offline support and home-screen install

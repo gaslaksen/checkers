@@ -76,6 +76,7 @@ class CheckersGame {
     this.comeback = { [RED]: 0, [BLACK]: 0 }; // comeback meter (see COMEBACK_EVERY)
     this.lost = { [RED]: 0, [BLACK]: 0 }; // captured pieces that Revive can bring back
     this.inventory = { [RED]: emptyInventory(), [BLACK]: emptyInventory() };
+    this.pending = { [RED]: [], [BLACK]: [] }; // reward choices waiting to be made
   }
 
   clone() {
@@ -94,6 +95,7 @@ class CheckersGame {
     g.comeback = { ...this.comeback };
     g.lost = { ...this.lost };
     g.inventory = { [RED]: { ...this.inventory[RED] }, [BLACK]: { ...this.inventory[BLACK] } };
+    g.pending = { [RED]: this.pending[RED].map((o) => ({ ...o })), [BLACK]: this.pending[BLACK].map((o) => ({ ...o })) };
     return g;
   }
 
@@ -114,6 +116,7 @@ class CheckersGame {
       comeback: this.comeback,
       lost: this.lost,
       inventory: this.inventory,
+      pending: this.pending,
     }));
   }
 
@@ -188,8 +191,9 @@ class CheckersGame {
     if (this.over) return [];
     if (this.chainPiece) {
       const [r, c] = this.chainPiece;
-      return this.pieceMoves(r, c).jumps;
+      return this.pieceMoves(r, c).jumps; // never interrupt a multi-jump
     }
+    if (this.pendingReward(this.turn)) return []; // choose your reward first
     return this.movesFor(this.turn);
   }
 
@@ -249,20 +253,48 @@ class CheckersGame {
     return POOLS[tier].reduce((n, id) => n + this.inventory[color][id], 0);
   }
 
-  // Take the next reward on `color`'s track.
+  // Take the next reward on `color`'s track: two abilities of that tier to
+  // pick between, waiting until it's their turn to choose.
   advanceTrack(color) {
     this.track[color]++;
-    return this.grantReward(color, rewardTier(this.track[color]));
+    const tier = rewardTier(this.track[color]);
+    const pool = POOLS[tier];
+    const first = Math.floor(this.rng() * pool.length);
+    let second = Math.floor(this.rng() * (pool.length - 1));
+    if (second >= first) second++; // a different one
+    const offer = { color, tier, options: [pool[first], pool[second]] };
+    this.pending[color].push(offer);
+    return offer;
   }
 
-  // Give `color` a random ability of `tier`. Returns { color, ability, tier },
-  // with ability null if they can't hold any more of that tier (it's lost).
-  grantReward(color, tier) {
-    if (this.tierCount(color, tier) >= TIER_LIMITS[tier]) return { color, ability: null, tier };
-    const pool = POOLS[tier];
-    const ability = pool[Math.floor(this.rng() * pool.length)];
+  // The choice `color` has waiting, if any.
+  pendingReward(color) {
+    return this.pending[color][0] || null;
+  }
+
+  // Take one of the two offered abilities, or none of them. When that tier is
+  // already full, `replace` says which held ability to give up for it.
+  // Returns what happened, or null if the choice doesn't make sense.
+  chooseReward(color, ability, replace = null) {
+    const offer = this.pendingReward(color);
+    if (!offer) return null;
+
+    if (ability === null) { // turned it down
+      this.pending[color].shift();
+      return { color, tier: offer.tier, ability: null, replaced: null };
+    }
+    if (!offer.options.includes(ability)) return null;
+
+    let replaced = null;
+    if (this.tierCount(color, offer.tier) >= TIER_LIMITS[offer.tier]) {
+      const holdsIt = replace && this.inventory[color][replace] > 0;
+      if (!holdsIt || ABILITIES[replace].tier !== offer.tier) return null;
+      this.inventory[color][replace]--;
+      replaced = replace;
+    }
     this.inventory[color][ability]++;
-    return { color, ability, tier };
+    this.pending[color].shift();
+    return { color, tier: offer.tier, ability, replaced };
   }
 
   // ---------- Abilities ----------
@@ -273,6 +305,7 @@ class CheckersGame {
   abilityActions(ability) {
     const color = this.turn;
     if (this.over || this.chainPiece || this.abilityUsed) return [];
+    if (this.pendingReward(color)) return []; // choose your reward first
     if (!this.inventory[color][ability]) return [];
     return this.actionsFor(color, ability);
   }

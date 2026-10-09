@@ -52,13 +52,27 @@ const Bot = (() => {
       const result = next.move(move);
       const hops = [...prefix, move];
       if (!result.continues) {
+        settleRewards(next);
         out.push({ hops, state: next });
         continue;
       }
       const stopped = next.clone();
       stopped.endTurn();
+      settleRewards(stopped);
       out.push({ hops, state: stopped });
       collectTurns(next, hops, out);
+    }
+  }
+
+  // Inside the search, assume both players take the rewards they've earned —
+  // otherwise a position with a choice waiting looks like one with no moves.
+  function settleRewards(game) {
+    for (const color of [RED, BLACK]) {
+      let guard = 0;
+      while (game.pendingReward(color) && guard++ < 8) {
+        const choice = chooseReward(game, color);
+        game.chooseReward(color, choice.ability, choice.replace || null);
+      }
     }
   }
 
@@ -188,6 +202,36 @@ const Bot = (() => {
     });
   }
 
+  // What each ability is worth to the bot when picking a reward. Roughly how
+  // much a good player would want it, with the situation taken into account.
+  function wantValue(game, color, ability) {
+    const base = { sidestep: 12, retreat: 10, extraStep: 16, shield: 30, freeze: 32, push: 26, swap: 30, crown: 55, revive: 50 };
+    let value = base[ability];
+    if (ability === 'revive' && game.lost[color] === 0) value = 5; // nothing to bring back
+    if (ability === 'crown') {
+      let men = 0;
+      game.forEachPiece(color, (p) => { if (!p.king) men++; });
+      if (!men) value = 5; // every piece is already a king
+    }
+    return value;
+  }
+
+  // Picks one of the two offered abilities. With that tier full, it swaps out
+  // its weakest one if the new one beats it, and otherwise turns the offer down.
+  function chooseReward(game, color) {
+    const offer = game.pendingReward(color);
+    if (!offer) return null;
+    const [best] = [...offer.options].sort((a, b) => wantValue(game, color, b) - wantValue(game, color, a));
+    if (game.tierCount(color, offer.tier) < TIER_LIMITS[offer.tier]) return { ability: best };
+
+    const held = ABILITY_IDS.filter((id) => ABILITIES[id].tier === offer.tier && game.inventory[color][id] > 0);
+    const [weakest] = held.sort((a, b) => wantValue(game, color, a) - wantValue(game, color, b));
+    if (weakest && wantValue(game, color, best) > wantValue(game, color, weakest)) {
+      return { ability: best, replace: weakest };
+    }
+    return { ability: null }; // keep what it has
+  }
+
   // Returns the bot's turn as { action, hops }: an optional ability action to
   // use first, then the normal hops to play.
   function chooseTurn(game, level = 'normal') {
@@ -225,7 +269,7 @@ const Bot = (() => {
     return pick(good[Math.floor(Math.random() * good.length)]);
   }
 
-  return { chooseTurn, LEVELS };
+  return { chooseTurn, chooseReward, LEVELS };
 })();
 
 if (typeof module !== 'undefined') module.exports = { Bot };

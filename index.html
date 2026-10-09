@@ -4,6 +4,15 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Super Checkers</title>
+  <meta name="theme-color" content="#1c1d21">
+  <meta name="description" content="Checkers where jumping pieces earns you abilities.">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="Super Checkers">
+  <link rel="manifest" href="manifest.json">
+  <link rel="icon" href="icon-192.png">
+  <link rel="apple-touch-icon" href="apple-touch-icon.png">
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
@@ -20,6 +29,14 @@
       <button id="open-multiplayer" type="button" class="menu-btn">
         Multiplayer
         <small>Play against a person</small>
+      </button>
+      <button id="how-to-play" type="button" class="menu-btn">
+        How to Play
+        <small>Rules and abilities</small>
+      </button>
+      <button id="install-app" type="button" class="menu-btn" hidden>
+        Install
+        <small>Add it to your home screen</small>
       </button>
     </div>
     <div id="menu-multiplayer" class="menu-buttons" hidden>
@@ -49,6 +66,7 @@
     <div id="menu-create" class="menu-buttons" hidden>
       <p class="menu-label">Your code</p>
       <div id="code-display" class="code-display">····</div>
+      <button id="share-code" type="button" class="menu-btn">Share code</button>
       <p id="create-status" class="menu-note">Getting a code…</p>
       <button type="button" class="menu-back" data-back="online">Cancel</button>
     </div>
@@ -82,6 +100,7 @@
     <div id="bar-top" class="status-bar">
       <div class="status" aria-live="polite"></div>
       <div class="actions">
+        <button type="button" class="react-toggle" aria-label="Send a reaction" title="Send a reaction">🙂</button>
         <button type="button" class="sound-toggle" aria-label="Sound on or off" title="Sound on or off">🔊</button>
         <button type="button" class="to-menu">Menu</button>
       </div>
@@ -95,15 +114,38 @@
     <div id="bar-bottom" class="status-bar">
       <div class="status" aria-live="polite"></div>
       <div class="actions">
+        <button type="button" class="react-toggle" aria-label="Send a reaction" title="Send a reaction">🙂</button>
         <button type="button" class="sound-toggle" aria-label="Sound on or off" title="Sound on or off">🔊</button>
         <button type="button" class="to-menu">Menu</button>
       </div>
     </div>
   </main>
 
+  <div id="reactions" class="reactions" hidden>
+    <button type="button" data-react="👍">👍</button>
+    <button type="button" data-react="😂">😂</button>
+    <button type="button" data-react="😮">😮</button>
+    <button type="button" data-react="😅">😅</button>
+    <button type="button" data-react="🎉">🎉</button>
+    <button type="button" data-react="🤔">🤔</button>
+  </div>
+
+  <div id="reward" class="result" hidden>
+    <div class="result-card reward-card" role="dialog" aria-labelledby="reward-title">
+      <h2 id="reward-title" class="result-title dialog-title">Choose your reward</h2>
+      <p id="reward-sub" class="result-sub"></p>
+      <div id="reward-options" class="reward-options"></div>
+      <div id="reward-swap" class="reward-swap" hidden>
+        <p class="menu-label">Replace which one?</p>
+        <div id="reward-held" class="reward-options"></div>
+      </div>
+      <button id="reward-skip" type="button" class="menu-back">No thanks</button>
+    </div>
+  </div>
+
   <div id="guide" class="result" hidden>
     <div class="result-card guide-card" role="dialog" aria-labelledby="guide-title">
-      <h2 id="guide-title" class="result-title dialog-title">Abilities</h2>
+      <h2 id="guide-title" class="result-title dialog-title">How to Play</h2>
       <div id="guide-body" class="guide-body"></div>
       <div class="menu-buttons">
         <button id="guide-close" type="button" class="menu-btn primary">Got it</button>
