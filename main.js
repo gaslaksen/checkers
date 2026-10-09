@@ -74,7 +74,6 @@
   const squaresEl = document.getElementById('squares');
   const piecesEl = document.getElementById('pieces');
   const statusEls = document.querySelectorAll('.status');
-  const toastsEl = document.getElementById('toasts');
   const panelEls = { [RED]: document.getElementById('panel-red'), [BLACK]: document.getElementById('panel-black') };
   const resultEl = document.getElementById('result');
   const confirmEl = document.getElementById('confirm');
@@ -89,6 +88,9 @@
   let pendingIntent = false; // online guest: waiting to hear back about a move
   let connectionLost = false; // online: the other player is gone
   let toastBuffer = null; // online host: messages to pass on to the guest
+  let message = null; // the message showing in both panels right now
+  let messageId = 0;
+  const messageQueue = [];
   let soundBuffer = null; // online host: sounds to pass on to the guest
   let netAction = null; // online host: the ability used, so the guest can show it
   let flipped = false; // draw the board from black's side
@@ -231,8 +233,9 @@
     abilityPick = null;
     lastPath = [];
     piecesEl.innerHTML = '';
-    toastsEl.innerHTML = '';
     pieceEls.clear();
+    message = null;
+    messageQueue.length = 0;
     hideResult();
     // Online, the player on black sees the board from their own side.
     const shouldFlip = mode === 'online' && myColor === BLACK;
@@ -804,6 +807,14 @@
       hint = 'Now make your move.';
     }
 
+    // One reserved line per panel: the hint while aiming an ability, otherwise
+    // whatever just happened. Reserved so the board never shifts.
+    const line = hint
+      ? `<span class="panel-hint">${hint}</span>`
+      : message
+        ? `<span class="panel-message tier-${message.tier}" data-msg="${message.id}">${message.text}</span>`
+        : '';
+
     const comeback = game.comeback[color];
     const trackHelp =
       'Every jump earns an ability: ' +
@@ -822,7 +833,7 @@
         </div>
       </div>
       <div class="abilities">${buttons.join('') || '<span class="empty">Jump pieces to earn abilities</span>'}</div>
-      ${hint ? `<div class="panel-hint">${hint}</div>` : ''}`;
+      <div class="panel-line">${line}</div>`;
   }
 
   // ---------- End-of-game screen ----------
@@ -1052,13 +1063,26 @@
     Sound.play(name);
   }
 
+  // Messages appear in both players' panels rather than over the board, so
+  // they never hide the pieces and each player reads their own copy the right
+  // way up. They queue, so a burst of them doesn't overwrite itself.
+  const MESSAGE_MS = 1700;
+
   function toast(text, tier) {
     if (toastBuffer) toastBuffer.push({ text, tier }); // passed on to the other device
-    const el = document.createElement('div');
-    el.className = `toast tier-${tier}`;
-    el.innerHTML = `<span class="text">${text}</span>`;
-    toastsEl.appendChild(el);
-    setTimeout(() => el.remove(), 2200);
+    messageQueue.push({ text, tier, id: ++messageId });
+    if (!message) nextMessage();
+  }
+
+  function nextMessage() {
+    message = messageQueue.shift() || null;
+    renderPanel(RED);
+    renderPanel(BLACK);
+    if (!message) return;
+    const mine = message.id;
+    setTimeout(() => {
+      if (message && message.id === mine) nextMessage();
+    }, MESSAGE_MS);
   }
 
   function flash([r, c]) {
