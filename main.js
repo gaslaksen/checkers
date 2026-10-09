@@ -151,14 +151,20 @@
 
   for (const panel of Object.values(panelEls)) {
     panel.addEventListener('click', (e) => {
-      const btn = e.target.closest('.ability');
+      const help = e.target.closest('.slot.help');
+      if (help) {
+        showGuide();
+        return;
+      }
+      const btn = e.target.closest('.slot[data-ability]');
       if (btn && !btn.disabled) toggleAbility(btn.dataset.ability);
     });
   }
 
   document.addEventListener('keydown', (e) => {
     if (e.key !== 'Escape') return;
-    if (!confirmEl.hidden) confirmEl.hidden = true;
+    if (!guideEl.hidden) guideEl.hidden = true;
+    else if (!confirmEl.hidden) confirmEl.hidden = true;
     else if (activeAbility) toggleAbility(activeAbility);
   });
 
@@ -787,22 +793,33 @@
       (tier, i) => `<span class="pip tier-${tier}${i < done ? ' filled' : ''}"></span>`
     ).join('');
 
-    const held = ABILITY_IDS.filter((id) => game.inventory[color][id] > 0);
-    const buttons = held.map((id) => {
-      const info = ABILITY_INFO[id];
-      const usable = controllable && game.abilityActions(id).length > 0;
-      return `<button type="button" class="ability tier-${tierOf(id)}${activeAbility === id ? ' active' : ''}"
-        data-ability="${id}" title="${info.help}" ${usable ? '' : 'disabled'}>
-        <span aria-hidden="true">${info.icon}</span><span class="name">${info.name}</span>
-        <span class="count">${game.inventory[color][id]}</span></button>`;
+    // One slot per ability you can hold: three Common, two Rare, one Epic.
+    // Empty slots stay visible, so the row is always the same size and the
+    // limits are obvious without reading anything.
+    const slots = [];
+    for (const tier of ['common', 'rare', 'epic']) {
+      const mine = ABILITY_IDS.filter((id) => tierOf(id) === tier)
+        .flatMap((id) => Array(game.inventory[color][id]).fill(id));
+      for (let i = 0; i < TIER_LIMITS[tier]; i++) slots.push({ tier, ability: mine[i] || null });
+    }
+
+    const buttons = slots.map(({ tier, ability }) => {
+      if (!ability) {
+        return `<span class="slot empty tier-${tier}" title="Empty ${TIER_NAME[tier]} slot"></span>`;
+      }
+      const info = ABILITY_INFO[ability];
+      const usable = controllable && game.abilityActions(ability).length > 0;
+      return `<button type="button" class="slot tier-${tier}${activeAbility === ability ? ' active' : ''}"
+        data-ability="${ability}" title="${info.name}: ${info.help}" ${usable ? '' : 'disabled'}>
+        <span class="slot-icon" aria-hidden="true">${info.icon}</span>
+        <span class="slot-name">${info.name}</span></button>`;
     });
 
     let hint = '';
     if (controllable && activeAbility) {
       const info = ABILITY_INFO[activeAbility];
-      const prompt = abilityPick ? info.dest : info.pick;
-      hint = `${prompt} Select the ability again to cancel.
-        <span class="hint-help">${info.help}</span>`;
+      // Short enough for one line — the guide explains what each ability does.
+      hint = `${info.name}: ${abilityPick ? info.dest : info.pick}`;
     } else if (controllable && game.abilityUsed) {
       hint = 'Now make your move.';
     }
@@ -832,7 +849,9 @@
           ${pips}<span class="track-next">Next: <span class="tier-${nextTier}">${TIER_NAME[nextTier]}</span>${nextFull ? ' (full)' : ''}</span>
         </div>
       </div>
-      <div class="abilities">${buttons.join('') || '<span class="empty">Jump pieces to earn abilities</span>'}</div>
+      <div class="abilities">${buttons.join('')}
+        <button type="button" class="slot help" title="What do these do?" aria-label="Ability guide">?</button>
+      </div>
       <div class="panel-line">${line}</div>`;
   }
 
@@ -893,6 +912,32 @@
       bit.style.animationDelay = `${Math.random() * 1.5}s`;
       el.appendChild(bit);
     }
+  }
+
+  // ---------- Ability guide ----------
+
+  const guideEl = document.getElementById('guide');
+  document.getElementById('guide-close').addEventListener('click', () => { guideEl.hidden = true; });
+
+  function showGuide() {
+    const rows = ['common', 'rare', 'epic'].map((tier) => {
+      const list = ABILITY_IDS.filter((id) => tierOf(id) === tier).map((id) => {
+        const info = ABILITY_INFO[id];
+        return `<li><span class="guide-icon" aria-hidden="true">${info.icon}</span>
+          <span><b>${info.name}</b> — ${info.help}</span></li>`;
+      }).join('');
+      return `<h3 class="guide-tier tier-${tier}">${TIER_NAME[tier]}
+        <small>hold up to ${TIER_LIMITS[tier]}</small></h3><ul class="guide-list">${list}</ul>`;
+    }).join('');
+
+    document.getElementById('guide-body').innerHTML = `
+      <p class="guide-intro">Every piece you jump earns a random ability:
+        ${REWARD_TRACK.map((t) => TIER_NAME[t]).join(', ')}, then it repeats.
+        Lose ${COMEBACK_EVERY} pieces and you get the next one anyway.
+        You can use one ability per turn, at the start of your turn.</p>
+      ${rows}`;
+    guideEl.hidden = false;
+    document.getElementById('guide-close').focus();
   }
 
   // ---------- Ability effects ----------
