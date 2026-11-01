@@ -206,12 +206,6 @@
     });
   }
   for (const btn of document.querySelectorAll('.to-menu')) btn.addEventListener('click', askLeaveGame);
-  for (const btn of document.querySelectorAll('.sound-toggle')) {
-    btn.addEventListener('click', () => {
-      Sound.setEnabled(!Sound.isEnabled());
-      renderSoundButtons();
-    });
-  }
   // Menu buttons and the like get a quiet tick.
   document.addEventListener('click', (e) => {
     if (e.target.closest('.menu-btn, .menu-back, .to-menu, #join-game')) Sound.play('click');
@@ -266,6 +260,7 @@
     gameEl.classList.toggle('hotseat', mode === 'local');
     gameEl.classList.toggle('solo-view', mode !== 'local');
     gameEl.classList.toggle('online', mode === 'online');
+    gameEl.classList.toggle('vs-bot', mode === 'bot');
     menuEl.hidden = true;
     gameEl.hidden = false;
     render();
@@ -631,7 +626,11 @@
   // ---------- Game actions (shared by the human and the bot) ----------
 
   function applyHop(move) {
+    const mover = game.turn;
     const result = game.move(move);
+    lastActor = mover;
+    if (result.captured) turnCaptures++;
+    if (result.promoted) turnPromoted = true;
     sfx(result.captured ? 'capture' : 'move');
     if (result.promoted) sfx('crown');
     raise(result.piece);
@@ -675,6 +674,9 @@
 
   // Called whenever a turn ends.
   function afterTurn(skipped) {
+    botReactToTurn();
+    turnCaptures = 0;
+    turnPromoted = false;
     if (skipped) toast(`${label(skipped)} is frozen — turn skipped`, 'rare');
     const movesLeft = DRAW_AFTER - game.quietTurns;
     if (!game.over && (movesLeft === 20 || movesLeft === 10)) {
@@ -801,18 +803,9 @@
     }
 
     renderStatus();
-    renderSoundButtons();
     maybeShowReward();
     renderPanel(RED);
     renderPanel(BLACK);
-  }
-
-  function renderSoundButtons() {
-    const on = Sound.isEnabled();
-    for (const btn of document.querySelectorAll('.sound-toggle')) {
-      btn.textContent = on ? '🔊' : '🔇';
-      btn.setAttribute('aria-pressed', String(on));
-    }
   }
 
   function renderStatus() {
@@ -941,6 +934,7 @@
     resultEl.classList.toggle('lost', lost);
     resultEl.hidden = false;
     Sound.play(game.drawn ? 'draw' : lost ? 'lose' : 'win');
+    if (mode === 'bot' && !game.drawn) botReact(lost ? 'won' : 'lost', { always: true });
     if (!lost && !game.drawn) launchConfetti();
     document.getElementById('play-again').focus();
   }
@@ -1024,7 +1018,7 @@
     if (!btn) return;
     reactionsEl.hidden = true;
     showReaction(myColor, btn.dataset.react);
-    Net.send({ type: 'react', emoji: btn.dataset.react });
+    if (mode === 'online') Net.send({ type: 'react', emoji: btn.dataset.react });
   });
 
   document.addEventListener('click', (e) => {
@@ -1040,6 +1034,55 @@
     panelEls[color].appendChild(el);
     Sound.play('click');
     setTimeout(() => el.remove(), 1700);
+  }
+
+  // ---------- The bot reacting ----------
+
+  // Sparse on purpose: a bot that reacts to everything is annoying.
+  const BOT_REACTIONS = {
+    bigTurn: ['🎉', '😂', '👍'],      // it took two or more of your pieces
+    crowned: ['🎉', '👍'],
+    youHitBack: ['😮', '🤔'],         // you took two or more of its pieces
+    youTookOne: ['🤔', '😮'],
+    won: ['🎉', '👍'],
+    lost: ['😅', '👍'],
+  };
+  const REACT_CHANCE = { easy: 0.5, normal: 0.35, hard: 0.25 };
+  const REACT_COOLDOWN = 8000;
+
+  let lastBotReaction = 0;
+  let turnCaptures = 0; // pieces taken during the turn being played
+  let turnPromoted = false;
+  let lastActor = null;
+
+  function botReact(kind, { always = false } = {}) {
+    if (mode !== 'bot' || game.drawn) return;
+    const now = Date.now();
+    if (!always) {
+      if (now - lastBotReaction < REACT_COOLDOWN) return;
+      if (Math.random() > (REACT_CHANCE[botLevel] ?? 0.3)) return;
+    }
+    const pool = BOT_REACTIONS[kind];
+    lastBotReaction = now;
+    const emoji = pool[Math.floor(Math.random() * pool.length)];
+    const mySession = session;
+    // A beat later, so it lands after the move it's reacting to.
+    setTimeout(() => {
+      if (mySession === session) showReaction(BOT_COLOR, emoji);
+    }, 500 + Math.random() * 500);
+  }
+
+  // Called when a turn ends, with the counts from that turn.
+  function botReactToTurn() {
+    if (mode !== 'bot') return;
+    if (lastActor === BOT_COLOR) {
+      if (turnCaptures >= 2) botReact('bigTurn');
+      else if (turnPromoted) botReact('crowned');
+    } else if (turnCaptures >= 2) {
+      botReact('youHitBack');
+    } else if (turnCaptures === 1) {
+      botReact('youTookOne');
+    }
   }
 
   // ---------- Choosing a reward ----------

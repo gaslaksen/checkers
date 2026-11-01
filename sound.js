@@ -3,16 +3,9 @@
 // away fast, plus a click of noise for the clatter of the piece itself.
 
 const Sound = (() => {
-  const STORAGE_KEY = 'superCheckersSound';
   const VOLUME = 0.5;
 
   let ctx = null;
-  let enabled = true;
-  try {
-    enabled = localStorage.getItem(STORAGE_KEY) !== 'off';
-  } catch (e) {
-    // Private browsing can refuse storage; sound just won't be remembered.
-  }
 
   // Browsers only allow audio after the player interacts with the page, so the
   // audio context is created on the first sound and resumed if it was paused.
@@ -227,7 +220,6 @@ const Sound = (() => {
       sound(target, 0);
       return;
     }
-    if (!enabled) return;
     const c = context();
     if (!c) return;
     try {
@@ -241,21 +233,11 @@ const Sound = (() => {
   // tap can start it again — a sound arriving over the network can't. Call
   // this from user input so sound comes back after switching apps.
   function resume() {
-    if (!enabled || !ctx) return;
+    if (!ctx) return;
     if (ctx.state === 'suspended') ctx.resume().catch(() => {});
   }
 
-  function setEnabled(on) {
-    enabled = on;
-    try {
-      localStorage.setItem(STORAGE_KEY, on ? 'on' : 'off');
-    } catch (e) {
-      // Not remembered, but still applies for this session.
-    }
-    if (on) play('click');
-  }
-
-  return { play, resume, setEnabled, isEnabled: () => enabled, names: Object.keys(SOUNDS) };
+  return { play, resume, names: Object.keys(SOUNDS) };
 })();
 
 if (typeof module !== 'undefined') module.exports = { Sound };
