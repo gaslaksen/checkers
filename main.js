@@ -120,7 +120,9 @@
   }
 
   // Can this device act right now?
-  const canAct = () => !game.over && isHuman(game.turn) && !pendingIntent && !connectionLost;
+  const canAct = () =>
+    !game.over && isHuman(game.turn) && !pendingIntent && !connectionLost && !game.pendingReward(game.turn)
+    && !(mode === 'local' && game.pendingReward(opponent(game.turn))); // the other player is still choosing
 
   // ---------- Setup ----------
 
@@ -682,16 +684,21 @@
     if (!game.over && (movesLeft === 20 || movesLeft === 10)) {
       toast(`No progress — draw in ${movesLeft} moves`, 'common');
     }
-    if (game.over) showResultSoon();
+    if (game.over) {
+      const botLost = mode === 'bot' && game.winner !== BOT_COLOR;
+      if (mode === 'bot' && !game.drawn) botReact(botLost ? 'lost' : 'won', { always: true });
+      showResultSoon(mode === 'bot' && !game.drawn ? 1600 : 700);
+    }
     scheduleBot();
   }
 
-  // Give the last move a moment to animate before covering the board.
-  function showResultSoon() {
+  // Give the last move a moment to animate — and the bot a moment to react —
+  // before covering the board.
+  function showResultSoon(delay = 700) {
     const mySession = session;
     setTimeout(() => {
       if (mySession === session && game.over) showResult();
-    }, 700);
+    }, delay);
   }
 
   function raise(piece) {
@@ -703,6 +710,7 @@
 
   function scheduleBot() {
     if (!isBotTurn()) return;
+    if (game.pendingReward(opponent(BOT_COLOR))) return; // wait: you're still choosing
     const mySession = session;
     // Short wait so the player's move renders before the bot starts thinking;
     // time spent thinking counts toward BOT_DELAY.
@@ -934,7 +942,7 @@
     resultEl.classList.toggle('lost', lost);
     resultEl.hidden = false;
     Sound.play(game.drawn ? 'draw' : lost ? 'lose' : 'win');
-    if (mode === 'bot' && !game.drawn) botReact(lost ? 'won' : 'lost', { always: true });
+
     if (!lost && !game.drawn) launchConfetti();
     document.getElementById('play-again').focus();
   }
@@ -1066,11 +1074,21 @@
     lastBotReaction = now;
     const emoji = pool[Math.floor(Math.random() * pool.length)];
     const mySession = session;
-    // A beat later, so it lands after the move it's reacting to.
-    setTimeout(() => {
-      if (mySession === session) showReaction(BOT_COLOR, emoji);
-    }, 500 + Math.random() * 500);
+    // A beat later, so it lands after the move it's reacting to — and not
+    // while a full-screen dialog is covering the board, where you'd miss it.
+    const show = (waited) => {
+      if (mySession !== session) return;
+      if (dialogOpen() && waited < 20000) {
+        setTimeout(() => show(waited + 300), 300);
+        return;
+      }
+      showReaction(BOT_COLOR, emoji);
+    };
+    setTimeout(() => show(0), 500 + Math.random() * 500);
   }
+
+  const dialogOpen = () =>
+    !rewardEl.hidden || !resultEl.hidden || !confirmEl.hidden || !guideEl.hidden;
 
   // Called when a turn ends, with the counts from that turn.
   function botReactToTurn() {
@@ -1089,6 +1107,8 @@
 
   const rewardEl = document.getElementById('reward');
   let rewardPick = null; // the ability chosen, while deciding what it replaces
+  let rewardColor = null; // who is choosing
+  let rewardKey = null; // the offer on screen, so it isn't rebuilt needlessly
 
   document.getElementById('reward-skip').addEventListener('click', () => sendReward(null));
   document.getElementById('reward-options').addEventListener('click', (e) => {
@@ -1109,15 +1129,32 @@
   };
 
   // Shows the choice when one is waiting for whoever is playing on this device.
+  // Whoever on this device has a reward waiting — usually the player who just
+  // jumped, so they choose straight away instead of waiting for their opponent.
+  function rewardChooser() {
+    if (connectionLost) return null;
+    for (const color of [lastActor, game.turn, opponent(game.turn)]) {
+      if (color && isHuman(color) && game.pendingReward(color)) return color;
+    }
+    return null;
+  }
+
   function maybeShowReward() {
-    const offer = game.pendingReward(game.turn);
-    if (!offer || !isHuman(game.turn) || connectionLost) {
+    const color = rewardChooser();
+    const offer = color && game.pendingReward(color);
+    if (!offer) {
       rewardEl.hidden = true;
       return;
     }
+    // Already showing this same offer? Leave it alone — rebuilding would
+    // undo a half-made choice when the other player's move arrives.
+    const key = `${color}:${offer.tier}:${offer.options.join(',')}`;
+    if (!rewardEl.hidden && rewardKey === key) return;
+    rewardKey = key;
     rewardPick = null;
+    rewardColor = color;
     // On one device, turn it around for whoever is sitting opposite.
-    rewardEl.classList.toggle('flip', mode === 'local' && game.turn === BLACK);
+    rewardEl.classList.toggle('flip', mode === 'local' && color === BLACK);
     const full = game.tierCount(offer.color, offer.tier) >= TIER_LIMITS[offer.tier];
     document.getElementById('reward-sub').textContent = full
       ? `Your ${TIER_NAME[offer.tier]} slots are full — take one of these in place of one you hold, or keep what you have.`
@@ -1129,7 +1166,7 @@
   }
 
   function pickReward(ability) {
-    const offer = game.pendingReward(game.turn);
+    const offer = game.pendingReward(rewardColor);
     if (!offer) return;
     if (game.tierCount(offer.color, offer.tier) < TIER_LIMITS[offer.tier]) {
       sendReward(ability);
@@ -1151,9 +1188,10 @@
       pendingIntent = true;
       return;
     }
-    startTurnEvents();
-    applyReward(game.turn, ability, replace);
+    startTurnEvents(rewardColor);
+    applyReward(rewardColor, ability, replace);
     broadcast();
+    scheduleBot(); // the bot was waiting for this
   }
 
   // Applies a choice and says what happened, wherever it came from.
