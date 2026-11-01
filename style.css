@@ -888,3 +888,20 @@ button {
 }
 
 .panel { position: relative; }
+
+/* Sharing one device: the reward screen faces whoever is choosing. It pops in
+   already turned around, since an animation overrides a plain transform. */
+.result.flip .result-card {
+  transform: rotate(180deg);
+  animation-name: pop-in-flipped;
+}
+
+@keyframes pop-in-flipped {
+  from { opacity: 0; transform: rotate(180deg) scale(0.7); }
+  to { opacity: 1; transform: rotate(180deg) scale(1); }
+}
+
+@media (orientation: landscape) and (max-height: 560px) {
+  /* Side by side, nobody is upside down. */
+  .result.flip .result-card { transform: none; }
+}

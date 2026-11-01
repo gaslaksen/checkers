@@ -93,6 +93,7 @@
   const messageQueue = [];
   let soundBuffer = null; // online host: sounds to pass on to the guest
   let netAction = null; // online host: the ability used, so the guest can show it
+  let netActor = null; // online host: whose action this was
   let flipped = false; // draw the board from black's side
   let session = 0; // bumped on new game / menu so stale bot timers do nothing
   let selected = null; // [r, c] of the piece picked for a normal move
@@ -171,6 +172,15 @@
   // Closing the tab tells the other player right away, instead of leaving them
   // waiting for a move that isn't coming.
   window.addEventListener('pagehide', () => Net.sayGoodbye());
+
+  // Coming back to the game after switching away: audio needs a nudge from a
+  // real interaction, or the rest of the game plays silently.
+  for (const event of ['pointerdown', 'keydown']) {
+    document.addEventListener(event, () => Sound.resume(), { passive: true });
+  }
+  document.addEventListener('visibilitychange', () => {
+    if (!document.hidden) Sound.resume();
+  });
 
   document.getElementById('play-bot').addEventListener('click', () => showMenuPage('difficulty'));
   document.getElementById('how-to-play').addEventListener('click', showGuide);
@@ -418,7 +428,8 @@
       selected = game.chainPiece && isHuman(game.turn) ? game.chainPiece : null;
       render();
       if (msg.action) abilityEffect(msg.action);
-      for (const name of msg.sounds || []) Sound.play(name);
+      // Your own sounds already played here when you made the move.
+      if (msg.by !== myColor) for (const name of msg.sounds || []) Sound.play(name);
       for (const event of msg.events || []) toast(event.text, event.tier);
       if (game.over) showResultSoon();
     }
@@ -432,7 +443,7 @@
       return;
     }
     if (game.over || game.turn === myColor) return; // not their turn
-    startTurnEvents();
+    startTurnEvents(opponent(myColor));
     if (msg.kind === 'move') {
       const move = game.legalMoves().find((m) => isAt(m.from, ...msg.from) && isAt(m.to, ...msg.to));
       if (move) {
@@ -461,6 +472,7 @@
       events: toastBuffer || [],
       sounds: soundBuffer || [],
       action: netAction,
+      by: netActor,
       path: lastPath,
     });
     toastBuffer = null;
@@ -561,6 +573,9 @@
   function requestMove(move) {
     if (isGuest()) {
       Net.send({ type: 'intent', kind: 'move', from: move.from, to: move.to });
+      const piece = game.board[move.from[0]][move.from[1]];
+      Sound.play(move.capture ? 'capture' : 'move');
+      if (piece && !piece.king && move.to[0] === (myColor === RED ? 0 : SIZE - 1)) Sound.play('crown');
       pendingIntent = true;
       render();
       return;
@@ -576,6 +591,7 @@
   function requestAbility(action) {
     if (isGuest()) {
       Net.send({ type: 'intent', kind: 'ability', action });
+      Sound.play(soundFor(action.ability));
       pendingIntent = true;
       activeAbility = null;
       abilityPick = null;
@@ -604,11 +620,12 @@
   }
 
   // Host: start collecting what to pass on with the next state.
-  function startTurnEvents() {
+  function startTurnEvents(actor = myColor) {
     if (mode !== 'online' || !isHost) return;
     toastBuffer = [];
     soundBuffer = [];
     netAction = null;
+    netActor = actor;
   }
 
   // ---------- Game actions (shared by the human and the bot) ----------
@@ -1056,6 +1073,8 @@
       return;
     }
     rewardPick = null;
+    // On one device, turn it around for whoever is sitting opposite.
+    rewardEl.classList.toggle('flip', mode === 'local' && game.turn === BLACK);
     const full = game.tierCount(offer.color, offer.tier) >= TIER_LIMITS[offer.tier];
     document.getElementById('reward-sub').textContent = full
       ? `Your ${TIER_NAME[offer.tier]} slots are full — take one of these in place of one you hold, or keep what you have.`
@@ -1083,6 +1102,8 @@
   function sendReward(ability, replace = null) {
     if (isGuest()) {
       Net.send({ type: 'intent', kind: 'reward', ability, replace });
+      const offer = game.pendingReward(myColor);
+      if (ability && offer) Sound.play(`reward${capitalize(offer.tier)}`);
       rewardEl.hidden = true;
       pendingIntent = true;
       return;

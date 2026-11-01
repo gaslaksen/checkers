@@ -237,6 +237,14 @@ const Sound = (() => {
     }
   }
 
+  // Browsers suspend audio while a page is in the background, and only a real
+  // tap can start it again — a sound arriving over the network can't. Call
+  // this from user input so sound comes back after switching apps.
+  function resume() {
+    if (!enabled || !ctx) return;
+    if (ctx.state === 'suspended') ctx.resume().catch(() => {});
+  }
+
   function setEnabled(on) {
     enabled = on;
     try {
@@ -247,7 +255,7 @@ const Sound = (() => {
     if (on) play('click');
   }
 
-  return { play, setEnabled, isEnabled: () => enabled, names: Object.keys(SOUNDS) };
+  return { play, resume, setEnabled, isEnabled: () => enabled, names: Object.keys(SOUNDS) };
 })();
 
 if (typeof module !== 'undefined') module.exports = { Sound };

@@ -8,15 +8,16 @@ const Bot = (() => {
   // merely decent move, and how far from the best that can be.
   // randomChance: how often it plays a completely random move.
   const LEVELS = {
-    // Only looks at its own move, sometimes plays at random, never uses abilities.
-    easy: { maxDepth: 1, tolerance: 40, randomChance: 0.3, abilities: false },
+    // Only looks at its own move and often plays at random, but it does use
+    // the abilities it earns.
+    easy: { maxDepth: 1, tolerance: 40, randomChance: 0.3, abilities: true },
     // Looks two turns ahead, often settles for a decent move, and now and then
     // plays a random one.
     normal: {
       maxDepth: 2, tolerance: 5, slipChance: 0.35, slipTolerance: 50, randomChance: 0.08, abilities: true,
     },
-    // Searches as deep as it can within the time limit.
-    hard: { maxDepth: 20, tolerance: 0, abilities: true, timeLimit: 700 },
+    // Searches as deep as it can within the time limit, up to five turns ahead.
+    hard: { maxDepth: 5, tolerance: 0, abilities: true, timeLimit: 700 },
   };
 
   const MAN = 100;
