@@ -108,9 +108,12 @@
     '<path d="M3 18.5h18L19.6 8l-4.6 4.2L12 5l-3 7.2L4.4 8z"/></svg>';
 
   const isRandy = () => mode === 'bot' && botLevel === 'randy';
-  // Randy's pieces are purple, so the messages should say so too.
-  const label = (color) =>
-    (isRandy() && color === RED ? 'Purple' : color[0].toUpperCase() + color.slice(1));
+  // Randy plays purple in his own mode, and you play black, so say so.
+  const label = (value) => {
+    if (isRandy() && value === BLACK) return 'Purple';
+    if (isRandy() && value === RED) return 'Black';
+    return value[0].toUpperCase() + value.slice(1);
+  };
   const isAt = (pos, r, c) => !!pos && pos[0] === r && pos[1] === c;
   const isBotTurn = () => mode === 'bot' && !game.over && game.turn === BOT_COLOR;
   const isGuest = () => mode === 'online' && !isHost;
