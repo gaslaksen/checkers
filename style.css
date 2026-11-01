@@ -905,11 +905,13 @@ button {
 
 .glitch-corner {
   position: fixed;
-  right: 0;
-  top: 0;
+  /* Clear of the phone's status bar and notch — up against the very edge,
+     taps in that strip never reach the page. */
+  top: calc(env(safe-area-inset-top, 0px) + 6px);
+  right: calc(env(safe-area-inset-right, 0px) + 6px);
   /* Small to look at, but still big enough to hit with a thumb. */
-  width: 46px;
-  height: 46px;
+  width: 54px;
+  height: 54px;
   padding: 0;
   border: none;
   background: none;
@@ -968,7 +970,7 @@ button {
 
 /* The menu it drops you into */
 .glitch-label {
-  color: var(--rare);
+  color: var(--epic);
   animation: flicker-text 2.4s steps(1, end) infinite;
 }
 
@@ -979,7 +981,8 @@ button {
 
 .glitch-btn {
   position: relative;
-  border-color: var(--rare);
+  border-color: #a855f7;
+  box-shadow: 0 0 14px rgba(168, 85, 247, 0.35);
   letter-spacing: 0.14em;
   animation: glitch-shift 3.1s steps(1, end) infinite;
 }
@@ -997,8 +1000,8 @@ button {
   letter-spacing: 0.14em;
   pointer-events: none;
 }
-.glitch-btn::before { color: #ff4d4d; animation: split-left 3.1s steps(1, end) infinite; }
-.glitch-btn::after { color: #4dffff; animation: split-right 3.1s steps(1, end) infinite; }
+.glitch-btn::before { color: #e879f9; animation: split-left 3.1s steps(1, end) infinite; }
+.glitch-btn::after { color: #7c5cff; animation: split-right 3.1s steps(1, end) infinite; }
 
 @keyframes glitch-shift {
   0%, 90%, 100% { transform: none; }
