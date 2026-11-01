@@ -907,8 +907,9 @@ button {
   position: fixed;
   right: 0;
   top: 0;
-  width: 54px;
-  height: 54px;
+  /* Small to look at, but still big enough to hit with a thumb. */
+  width: 46px;
+  height: 46px;
   padding: 0;
   border: none;
   background: none;
@@ -920,17 +921,19 @@ button {
 .glitch-corner span {
   position: absolute;
   display: block;
-  animation: flicker 1.6s steps(1, end) infinite;
+  animation: flicker 1.2s steps(1, end) infinite;
 }
 
+/* Each pixel is lit for about a fifth of its cycle; with random delays that
+   leaves two or three showing at any moment. */
 @keyframes flicker {
-  0%, 44%, 52%, 100% { opacity: 0; }
-  46%, 50% { opacity: 1; }
+  0%, 36%, 58%, 100% { opacity: 0; }
+  38%, 56% { opacity: 1; }
 }
 
 /* A torn strip that slides now and then */
 .glitch-corner span.tear {
-  animation: tear 2.9s steps(1, end) infinite;
+  animation: tear 2.4s steps(1, end) infinite;
 }
 
 @keyframes tear {
