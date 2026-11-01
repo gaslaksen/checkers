@@ -246,7 +246,7 @@
 
   // The display tearing for half a second.
   function screenFlash() {
-    const flash = document.getElementById('flash');
+    const flash = document.getElementById('screen-flash');
     flash.hidden = true;
     void flash.offsetWidth; // restart the animation
     flash.hidden = false;

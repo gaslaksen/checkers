@@ -943,8 +943,9 @@ button {
   97% { opacity: 0.6; transform: translateX(-2px); }
 }
 
-/* The screen tearing when you touch it */
-.flash {
+/* The screen tearing when you touch it. Note the name: a bare `.flash` would
+   also hit the board squares, which use a flash class of their own. */
+.screen-flash {
   position: fixed;
   inset: 0;
   z-index: 200;
