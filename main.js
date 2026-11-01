@@ -254,23 +254,23 @@
   (function scatterPixels() {
     const corner = document.getElementById('glitch-corner');
     const colors = ['#4dffff', '#ff4d4d', '#f4cf5e', '#c084fc', '#ebe7df'];
-    for (let i = 0; i < 16; i++) {
+    for (let i = 0; i < 13; i++) {
       const pixel = document.createElement('span');
-      const size = 2 + Math.floor(Math.random() * 5);
+      const size = 2 + Math.floor(Math.random() * 3);
       pixel.style.width = `${size * (Math.random() < 0.25 ? 3 : 1)}px`;
       pixel.style.height = `${size}px`;
-      pixel.style.right = `${Math.floor(Math.random() * 70)}px`;
-      pixel.style.bottom = `${Math.floor(Math.random() * 70)}px`;
+      pixel.style.right = `${Math.floor(Math.random() * 44)}px`;
+      pixel.style.top = `${Math.floor(Math.random() * 44)}px`;
       pixel.style.background = colors[i % colors.length];
       pixel.style.animationDelay = `${(Math.random() * 1.6).toFixed(2)}s`;
       corner.appendChild(pixel);
     }
     const tear = document.createElement('span');
     tear.className = 'tear';
-    tear.style.width = '58px';
-    tear.style.height = '3px';
-    tear.style.right = '8px';
-    tear.style.bottom = '26px';
+    tear.style.width = '34px';
+    tear.style.height = '2px';
+    tear.style.right = '6px';
+    tear.style.top = '18px';
     tear.style.background = '#4dffff';
     corner.appendChild(tear);
   })();

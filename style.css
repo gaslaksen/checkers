@@ -906,9 +906,9 @@ button {
 .glitch-corner {
   position: fixed;
   right: 0;
-  bottom: 0;
-  width: 84px;
-  height: 84px;
+  top: 0;
+  width: 54px;
+  height: 54px;
   padding: 0;
   border: none;
   background: none;
@@ -1014,12 +1014,17 @@ button {
 /* Set on the body so the dialogs are themed too, not just the board. */
 
 body.randy-mode {
-  --red: #8f3fe0;
-  --red-hi: #bd82f5;
-  --red-lo: #4a1780;
-  --board-edge: #2f1f55;
-  --dark-sq: #58447f;
-  --light-sq: #ded2f2;
+  /* Your pieces: bright violet. Randy's: a much deeper one, so the two sides
+     stay easy to tell apart on a purple board. */
+  --red: #a855f7;
+  --red-hi: #d8b4fe;
+  --red-lo: #6b21a8;
+  --black: #3b1a66;
+  --black-hi: #6d3fa8;
+  --black-lo: #150a2b;
+  --board-edge: #2a1b4d;
+  --dark-sq: #6b5a93;
+  --light-sq: #e4dbf5;
   --gold: #c9a8ff;
   --gold-lo: #8257cc;
   background: radial-gradient(ellipse at 50% 30%, #2a2140, var(--bg) 70%);
