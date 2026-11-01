@@ -194,6 +194,22 @@ const Sound = (() => {
       noise(c, at + 0.12, { peak: 0.08, duration: 0.3, filter: 4000, type: 'highpass' });
     },
 
+    // Something in the corner giving way.
+    glitch: (c, at) => {
+      for (let i = 0; i < 7; i++) {
+        const t = at + i * 0.055;
+        noise(c, t, { peak: 0.22, duration: 0.04, filter: 600 + Math.random() * 5000, type: 'bandpass' });
+        tone(c, t, {
+          freq: 180 + Math.random() * 1800,
+          type: 'square',
+          peak: 0.12,
+          duration: 0.045,
+          attack: 0.001,
+        });
+      }
+      tone(c, at + 0.3, { freq: 1200, slideTo: 90, type: 'sawtooth', peak: 0.18, duration: 0.3 });
+    },
+
     win: (c, at) => {
       [523.25, 659.25, 783.99, 1046.5].forEach((freq, i) => {
         tone(c, at + i * 0.13, { freq, type: 'triangle', peak: 0.35, duration: 0.34 });

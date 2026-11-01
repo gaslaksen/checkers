@@ -67,6 +67,27 @@ module.exports = {
     assert(used > 0, 'an easy bot spent at least one ability');
   },
 
+  'randy plays legal games, badly'() {
+    const results = [];
+    for (let i = 0; i < 3; i++) results.push(playGame('normal', 'randy').winner);
+    assert(results.every((w) => w !== 'randy'), `randy won one: ${results}`);
+  },
+
+  'randy chooses rewards at random, and legally'() {
+    const game = emptyGame();
+    put(game, 5, 2, BLACK);
+    put(game, 0, 7, RED);
+    const picks = new Set();
+    for (let i = 0; i < 25; i++) {
+      const copy = game.clone();
+      copy.pending[BLACK].push({ color: BLACK, tier: 'common', options: ['sidestep', 'retreat'] });
+      const choice = Bot.chooseReward(copy, BLACK, 'randy');
+      assert(copy.chooseReward(BLACK, choice.ability, choice.replace || null), 'the rules accepted it');
+      picks.add(choice.ability);
+    }
+    assert(picks.size > 1, 'it does not always pick the same one');
+  },
+
   'the bot skips a reward that would do nothing'() {
     const game = emptyGame();
     put(game, 5, 2, BLACK);

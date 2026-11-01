@@ -900,3 +900,130 @@ button {
   /* Side by side, nobody is upside down. */
   .result.flip .result-card { transform: none; }
 }
+
+/* ---------- Something in the corner ---------- */
+
+.glitch-corner {
+  position: fixed;
+  right: 0;
+  bottom: 0;
+  width: 84px;
+  height: 84px;
+  padding: 0;
+  border: none;
+  background: none;
+  opacity: 0.85;
+  cursor: pointer;
+  z-index: 20;
+}
+
+.glitch-corner span {
+  position: absolute;
+  display: block;
+  animation: flicker 1.6s steps(1, end) infinite;
+}
+
+@keyframes flicker {
+  0%, 44%, 52%, 100% { opacity: 0; }
+  46%, 50% { opacity: 1; }
+}
+
+/* A torn strip that slides now and then */
+.glitch-corner span.tear {
+  animation: tear 2.9s steps(1, end) infinite;
+}
+
+@keyframes tear {
+  0%, 92%, 100% { opacity: 0; transform: translateX(0); }
+  93% { opacity: 0.9; transform: translateX(-6px); }
+  95% { opacity: 0.9; transform: translateX(5px); }
+  97% { opacity: 0.6; transform: translateX(-2px); }
+}
+
+/* The screen tearing when you touch it */
+.flash {
+  position: fixed;
+  inset: 0;
+  z-index: 200;
+  pointer-events: none;
+  background: #fff;
+  animation: screen-flash 620ms steps(1, end) forwards;
+}
+
+@keyframes screen-flash {
+  0% { opacity: 0.9; background: #fff; }
+  12% { opacity: 0.1; background: #000; }
+  22% { opacity: 0.85; background: var(--rare); }
+  32% { opacity: 0.1; background: #000; }
+  44% { opacity: 0.7; background: var(--red); }
+  56% { opacity: 0.05; background: #000; }
+  68% { opacity: 0.6; background: var(--epic); }
+  80% { opacity: 0.2; background: #000; }
+  100% { opacity: 0; background: #000; }
+}
+
+/* The menu it drops you into */
+.glitch-label {
+  color: var(--rare);
+  animation: flicker-text 2.4s steps(1, end) infinite;
+}
+
+@keyframes flicker-text {
+  0%, 88%, 93%, 100% { opacity: 1; }
+  90%, 92% { opacity: 0.25; }
+}
+
+.glitch-btn {
+  position: relative;
+  border-color: var(--rare);
+  letter-spacing: 0.14em;
+  animation: glitch-shift 3.1s steps(1, end) infinite;
+}
+
+/* Colour-split copies of the label, offset either side */
+.glitch-btn::before,
+.glitch-btn::after {
+  content: attr(data-text);
+  position: absolute;
+  top: 16px;
+  left: 0;
+  right: 0;
+  font-size: 1.15rem;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  pointer-events: none;
+}
+.glitch-btn::before { color: #ff4d4d; animation: split-left 3.1s steps(1, end) infinite; }
+.glitch-btn::after { color: #4dffff; animation: split-right 3.1s steps(1, end) infinite; }
+
+@keyframes glitch-shift {
+  0%, 90%, 100% { transform: none; }
+  92% { transform: translateX(-3px); }
+  94% { transform: translateX(3px); }
+}
+@keyframes split-left {
+  0%, 89%, 96%, 100% { opacity: 0; transform: none; }
+  91%, 94% { opacity: 0.85; transform: translate(-3px, -1px); }
+}
+@keyframes split-right {
+  0%, 89%, 96%, 100% { opacity: 0; transform: none; }
+  91%, 94% { opacity: 0.85; transform: translate(3px, 1px); }
+}
+
+/* ---------- Randy's colours ---------- */
+/* Set on the body so the dialogs are themed too, not just the board. */
+
+body.randy-mode {
+  --red: #8f3fe0;
+  --red-hi: #bd82f5;
+  --red-lo: #4a1780;
+  --board-edge: #2f1f55;
+  --dark-sq: #58447f;
+  --light-sq: #ded2f2;
+  --gold: #c9a8ff;
+  --gold-lo: #8257cc;
+  background: radial-gradient(ellipse at 50% 30%, #2a2140, var(--bg) 70%);
+}
+
+body.randy-mode .square.last-move { background: #7a63ad; }
+body.randy-mode .square.selected { background: #8a6fc4; }

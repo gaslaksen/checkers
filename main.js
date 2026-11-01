@@ -61,6 +61,7 @@
   const menuPages = {
     main: document.getElementById('menu-main'),
     difficulty: document.getElementById('menu-difficulty'),
+    glitch: document.getElementById('menu-glitch'),
     multiplayer: document.getElementById('menu-multiplayer'),
     online: document.getElementById('menu-online'),
     create: document.getElementById('menu-create'),
@@ -106,7 +107,10 @@
     '<svg class="crown" viewBox="0 0 24 24" aria-hidden="true">' +
     '<path d="M3 18.5h18L19.6 8l-4.6 4.2L12 5l-3 7.2L4.4 8z"/></svg>';
 
-  const label = (color) => color[0].toUpperCase() + color.slice(1);
+  const isRandy = () => mode === 'bot' && botLevel === 'randy';
+  // Randy's pieces are purple, so the messages should say so too.
+  const label = (color) =>
+    (isRandy() && color === RED ? 'Purple' : color[0].toUpperCase() + color.slice(1));
   const isAt = (pos, r, c) => !!pos && pos[0] === r && pos[1] === c;
   const isBotTurn = () => mode === 'bot' && !game.over && game.turn === BOT_COLOR;
   const isGuest = () => mode === 'online' && !isHost;
@@ -186,6 +190,15 @@
 
   document.getElementById('play-bot').addEventListener('click', () => showMenuPage('difficulty'));
   document.getElementById('how-to-play').addEventListener('click', showGuide);
+  document.getElementById('glitch-corner').addEventListener('click', () => {
+    screenFlash();
+    Sound.play('glitch');
+    showMenuPage('glitch');
+  });
+  document.getElementById('play-randy').addEventListener('click', () => {
+    screenFlash();
+    startGame('bot', 'randy');
+  });
   document.getElementById('share-code').addEventListener('click', shareCode);
   document.getElementById('open-multiplayer').addEventListener('click', () => showMenuPage('multiplayer'));
   document.getElementById('play-local').addEventListener('click', () => startGame('local'));
@@ -228,6 +241,40 @@
 
   // ---------- Screens ----------
 
+  // The display tearing for half a second.
+  function screenFlash() {
+    const flash = document.getElementById('flash');
+    flash.hidden = true;
+    void flash.offsetWidth; // restart the animation
+    flash.hidden = false;
+    setTimeout(() => { flash.hidden = true; }, 640);
+  }
+
+  // Pixels that flicker in the corner of the difficulty screen.
+  (function scatterPixels() {
+    const corner = document.getElementById('glitch-corner');
+    const colors = ['#4dffff', '#ff4d4d', '#f4cf5e', '#c084fc', '#ebe7df'];
+    for (let i = 0; i < 16; i++) {
+      const pixel = document.createElement('span');
+      const size = 2 + Math.floor(Math.random() * 5);
+      pixel.style.width = `${size * (Math.random() < 0.25 ? 3 : 1)}px`;
+      pixel.style.height = `${size}px`;
+      pixel.style.right = `${Math.floor(Math.random() * 70)}px`;
+      pixel.style.bottom = `${Math.floor(Math.random() * 70)}px`;
+      pixel.style.background = colors[i % colors.length];
+      pixel.style.animationDelay = `${(Math.random() * 1.6).toFixed(2)}s`;
+      corner.appendChild(pixel);
+    }
+    const tear = document.createElement('span');
+    tear.className = 'tear';
+    tear.style.width = '58px';
+    tear.style.height = '3px';
+    tear.style.right = '8px';
+    tear.style.bottom = '26px';
+    tear.style.background = '#4dffff';
+    corner.appendChild(tear);
+  })();
+
   function showMenuPage(page) {
     for (const [name, el] of Object.entries(menuPages)) el.hidden = name !== page;
   }
@@ -263,6 +310,7 @@
     gameEl.classList.toggle('solo-view', mode !== 'local');
     gameEl.classList.toggle('online', mode === 'online');
     gameEl.classList.toggle('vs-bot', mode === 'bot');
+    document.body.classList.toggle('randy-mode', isRandy());
     menuEl.hidden = true;
     gameEl.hidden = false;
     render();
@@ -292,6 +340,7 @@
 
   function showMenu() {
     session++;
+    document.body.classList.remove('randy-mode');
     confirmEl.hidden = true;
     reactionsEl.hidden = true;
     leaveOnline();
@@ -718,7 +767,7 @@
       if (mySession !== session) return;
       // Take any reward it has earned first — it can't move until it has.
       while (game.pendingReward(BOT_COLOR)) {
-        const choice = Bot.chooseReward(game, BOT_COLOR);
+        const choice = Bot.chooseReward(game, BOT_COLOR, botLevel);
         if (!applyReward(BOT_COLOR, choice.ability, choice.replace || null)) break;
       }
       if (game.over || !isBotTurn()) return;
@@ -1055,8 +1104,9 @@
     won: ['🎉', '👍'],
     lost: ['😅', '👍'],
   };
-  const REACT_CHANCE = { easy: 0.5, normal: 0.35, hard: 0.25 };
+  const REACT_CHANCE = { easy: 0.5, normal: 0.35, hard: 0.25, randy: 1 };
   const REACT_COOLDOWN = 8000;
+  const ALL_REACTIONS = ['👍', '😂', '😮', '😅', '🎉', '🤔'];
 
   let lastBotReaction = 0;
   let turnCaptures = 0; // pieces taken during the turn being played
@@ -1070,7 +1120,7 @@
       if (now - lastBotReaction < REACT_COOLDOWN) return;
       if (Math.random() > (REACT_CHANCE[botLevel] ?? 0.3)) return;
     }
-    const pool = BOT_REACTIONS[kind];
+    const pool = kind === 'randy' ? ALL_REACTIONS : BOT_REACTIONS[kind];
     lastBotReaction = now;
     const emoji = pool[Math.floor(Math.random() * pool.length)];
     const mySession = session;
@@ -1093,6 +1143,10 @@
   // Called when a turn ends, with the counts from that turn.
   function botReactToTurn() {
     if (mode !== 'bot') return;
+    if (botLevel === 'randy') { // reacts to everything and nothing
+      if (Math.random() < 0.6) botReact('randy', { always: true });
+      return;
+    }
     if (lastActor === BOT_COLOR) {
       if (turnCaptures >= 2) botReact('bigTurn');
       else if (turnPromoted) botReact('crowned');

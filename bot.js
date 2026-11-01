@@ -18,6 +18,8 @@ const Bot = (() => {
     },
     // Searches as deep as it can within the time limit, up to five turns ahead.
     hard: { maxDepth: 5, tolerance: 0, abilities: true, timeLimit: 700 },
+    // Randy does not think. Randy picks something.
+    randy: { random: true, abilities: true },
   };
 
   const MAN = 100;
@@ -219,9 +221,18 @@ const Bot = (() => {
 
   // Picks one of the two offered abilities. With that tier full, it swaps out
   // its weakest one if the new one beats it, and otherwise turns the offer down.
-  function chooseReward(game, color) {
+  function chooseReward(game, color, level = 'normal') {
     const offer = game.pendingReward(color);
     if (!offer) return null;
+
+    if (LEVELS[level] && LEVELS[level].random) {
+      const ability = offer.options[Math.floor(Math.random() * offer.options.length)];
+      if (game.tierCount(color, offer.tier) < TIER_LIMITS[offer.tier]) return { ability };
+      const held = ABILITY_IDS.filter((id) => ABILITIES[id].tier === offer.tier && game.inventory[color][id] > 0);
+      // It might swap, it might not. It has no idea either way.
+      if (!held.length || Math.random() < 0.3) return { ability: null };
+      return { ability, replace: held[Math.floor(Math.random() * held.length)] };
+    }
     const [best] = [...offer.options].sort((a, b) => wantValue(game, color, b) - wantValue(game, color, a));
     if (game.tierCount(color, offer.tier) < TIER_LIMITS[offer.tier]) return { ability: best };
 
@@ -239,6 +250,9 @@ const Bot = (() => {
     const cfg = LEVELS[level] || LEVELS.normal;
     let options = rootOptions(game, cfg.abilities);
     const pick = (o) => ({ action: o.action, hops: o.hops });
+
+    // No search, no scoring, no second thoughts.
+    if (cfg.random) return pick(options[Math.floor(Math.random() * options.length)]);
     if (options.length === 1 || Math.random() < (cfg.randomChance || 0)) {
       return pick(options[Math.floor(Math.random() * options.length)]);
     }
