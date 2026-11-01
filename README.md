@@ -64,3 +64,14 @@ locally (online play needs the https address above).
 - `main.js` — screens, board and input
 - `sound.js` — sound effects, synthesized in code
 - `sw.js`, `manifest.json` — offline support and home-screen install
+
+## Tests
+
+```
+node tests/run.js
+```
+
+No dependencies — they run the rules engine and the bot directly and take
+about ten seconds. They cover the checkers rules, every ability, earning and
+choosing rewards, the draw rule, the state copy that online play relies on,
+and that the three bot difficulties stay in order.
