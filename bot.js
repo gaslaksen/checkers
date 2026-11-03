@@ -18,7 +18,7 @@ const Bot = (() => {
     },
     // Searches as deep as it can within the time limit, up to five turns ahead.
     hard: { maxDepth: 5, tolerance: 0, abilities: true, timeLimit: 700 },
-    // Randy does not think. Randy picks something.
+    // Randy does not think. Randy picks a square and sends it somewhere.
     randy: { random: true, abilities: true },
   };
 
@@ -39,6 +39,8 @@ const Bot = (() => {
   let nodes = 0;
 
   const captureCount = (hops) => hops.reduce((n, h) => n + (h.capture ? 1 : 0), 0);
+
+  const randomOf = (list) => list[Math.floor(Math.random() * list.length)];
 
   // Every way the side to move can play a normal turn, as { hops, state }, with
   // captures first (better pruning). Multi-jumps may stop after any hop, so
@@ -226,12 +228,12 @@ const Bot = (() => {
     if (!offer) return null;
 
     if (LEVELS[level] && LEVELS[level].random) {
-      const ability = offer.options[Math.floor(Math.random() * offer.options.length)];
+      const ability = randomOf(offer.options);
       if (game.tierCount(color, offer.tier) < TIER_LIMITS[offer.tier]) return { ability };
       const held = ABILITY_IDS.filter((id) => ABILITIES[id].tier === offer.tier && game.inventory[color][id] > 0);
       // It might swap, it might not. It has no idea either way.
       if (!held.length || Math.random() < 0.3) return { ability: null };
-      return { ability, replace: held[Math.floor(Math.random() * held.length)] };
+      return { ability, replace: randomOf(held) };
     }
     const [best] = [...offer.options].sort((a, b) => wantValue(game, color, b) - wantValue(game, color, a));
     if (game.tierCount(color, offer.tier) < TIER_LIMITS[offer.tier]) return { ability: best };
@@ -244,17 +246,80 @@ const Bot = (() => {
     return { ability: null }; // keep what it has
   }
 
+  // ---------- Randy ----------
+
+  // Randy doesn't weigh up a list of turns, he looks at the board. He picks a
+  // square at random out of the ones where something could happen, then a
+  // random thing to do from it — so a piece with one move is just as likely to
+  // be chosen as a piece with six.
+  function randomStart(game, useAbilities) {
+    const bySquare = new Map();
+    const add = (pos, option) => {
+      const key = pos[0] * SIZE + pos[1];
+      if (!bySquare.has(key)) bySquare.set(key, []);
+      bySquare.get(key).push(option);
+    };
+    for (const move of game.legalMoves()) add(move.from, { move });
+    if (useAbilities) {
+      // An ability is aimed at a square too: one of his pieces, an enemy's,
+      // or (for Revive) an empty one on his back row.
+      for (const id of ABILITY_IDS) {
+        for (const action of game.abilityActions(id)) add(action.select, { action });
+      }
+    }
+    const keys = [...bySquare.keys()];
+    if (!keys.length) return null;
+    return randomOf(bySquare.get(randomOf(keys)));
+  }
+
+  // A whole turn, the Randy way: a random square, a random thing to do from
+  // it, and then a random destination for every hop after that.
+  function randomTurn(game, useAbilities) {
+    const start = randomStart(game, useAbilities);
+    if (!start) return { action: null, hops: [] };
+    if (start.action) {
+      const after = game.clone();
+      after.useAbility(start.action);
+      // A movement ability was his whole turn; after any other he still moves.
+      const done = after.turn !== game.turn || after.over;
+      return { action: start.action, hops: done ? [] : randomHops(after) };
+    }
+    return { action: null, hops: randomHops(game, start.move) };
+  }
+
+  function randomHops(game, first = null) {
+    const g = game.clone();
+    const hops = [];
+    let move = first;
+    if (!move) {
+      const start = randomStart(g, false);
+      if (!start) return hops;
+      move = start.move;
+    }
+    for (;;) {
+      hops.push(move);
+      const result = g.move(move);
+      if (!result || !result.continues) return hops;
+      // Mid multi-jump the piece is forced on him, but whether he carries on
+      // is another coin flip.
+      if (Math.random() < 0.5) return hops;
+      const next = randomStart(g, false);
+      if (!next) return hops;
+      move = next.move;
+    }
+  }
+
   // Returns the bot's turn as { action, hops }: an optional ability action to
   // use first, then the normal hops to play.
   function chooseTurn(game, level = 'normal') {
     const cfg = LEVELS[level] || LEVELS.normal;
+    // No search, no scoring, no second thoughts.
+    if (cfg.random) return randomTurn(game, cfg.abilities);
+
     let options = rootOptions(game, cfg.abilities);
     const pick = (o) => ({ action: o.action, hops: o.hops });
-
-    // No search, no scoring, no second thoughts.
-    if (cfg.random) return pick(options[Math.floor(Math.random() * options.length)]);
     if (options.length === 1 || Math.random() < (cfg.randomChance || 0)) {
-      return pick(options[Math.floor(Math.random() * options.length)]);
+      return pick(randomOf(options));
     }
     const tolerance = Math.random() < (cfg.slipChance || 0) ? cfg.slipTolerance : cfg.tolerance;
 
@@ -281,7 +346,7 @@ const Bot = (() => {
 
     const best = Math.max(...scored.map((o) => o.score));
     const good = scored.filter((o) => o.score >= best - tolerance);
-    return pick(good[Math.floor(Math.random() * good.length)]);
+    return pick(randomOf(good));
   }
 
   return { chooseTurn, chooseReward, LEVELS };
