@@ -62,6 +62,7 @@
     main: document.getElementById('menu-main'),
     difficulty: document.getElementById('menu-difficulty'),
     glitch: document.getElementById('menu-glitch'),
+    tooeasy: document.getElementById('menu-tooeasy'),
     multiplayer: document.getElementById('menu-multiplayer'),
     online: document.getElementById('menu-online'),
     create: document.getElementById('menu-create'),
@@ -195,6 +196,10 @@
 
   document.getElementById('play-bot').addEventListener('click', () => showMenuPage('difficulty'));
   document.getElementById('how-to-play').addEventListener('click', showGuide);
+  document.getElementById('play-tooeasy').addEventListener('click', (e) => {
+    e.currentTarget.querySelector('small').textContent = 'still not here yet';
+    Sound.play('glitch');
+  });
   document.getElementById('play-randy').addEventListener('click', () => {
     screenFlash();
     startGame('bot', 'randy');
@@ -1261,7 +1266,7 @@
     guideEl.hidden = true;
     screenFlash();
     Sound.play('glitch');
-    showMenuPage('glitch');
+    showMenuPage('tooeasy');
   });
 
   const RULES = [

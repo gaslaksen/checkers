@@ -939,7 +939,7 @@ button {
 
 /* The menu it drops you into */
 .glitch-label {
-  color: var(--epic);
+  color: var(--glitch-tint, var(--epic));
   animation: flicker-text 2.4s steps(1, end) infinite;
 }
 
@@ -950,8 +950,8 @@ button {
 
 .glitch-btn {
   position: relative;
-  border-color: #a855f7;
-  box-shadow: 0 0 14px rgba(168, 85, 247, 0.35);
+  border-color: var(--glitch-tint, #a855f7);
+  box-shadow: 0 0 14px var(--glitch-glow, rgba(168, 85, 247, 0.35));
   letter-spacing: 0.14em;
   animation: glitch-shift 3.1s steps(1, end) infinite;
 }
@@ -969,8 +969,16 @@ button {
   letter-spacing: 0.14em;
   pointer-events: none;
 }
-.glitch-btn::before { color: #e879f9; animation: split-left 3.1s steps(1, end) infinite; }
-.glitch-btn::after { color: #7c5cff; animation: split-right 3.1s steps(1, end) infinite; }
+.glitch-btn::before { color: var(--glitch-split-a, #e879f9); animation: split-left 3.1s steps(1, end) infinite; }
+.glitch-btn::after { color: var(--glitch-split-b, #7c5cff); animation: split-right 3.1s steps(1, end) infinite; }
+
+/* The other door behind the smiley: the same menu, in yellow. */
+.tint-gold {
+  --glitch-tint: #f5c518;
+  --glitch-glow: rgba(245, 197, 24, 0.35);
+  --glitch-split-a: #ffe27a;
+  --glitch-split-b: #c98a07;
+}
 
 @keyframes glitch-shift {
   0%, 90%, 100% { transform: none; }
