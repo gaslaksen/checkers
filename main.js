@@ -1254,12 +1254,23 @@
   const guideEl = document.getElementById('guide');
   document.getElementById('guide-close').addEventListener('click', () => { guideEl.hidden = true; });
 
+  // The smiley in the rules is a door, but only while you're in the menu —
+  // during a game it's just a smiley.
+  document.getElementById('guide-body').addEventListener('click', (e) => {
+    if (!e.target.closest('.guide-smiley') || !gameEl.hidden) return;
+    guideEl.hidden = true;
+    screenFlash();
+    Sound.play('glitch');
+    showMenuPage('glitch');
+  });
+
   const RULES = [
     'Red moves first. Tap one of your pieces, then a highlighted square.',
     'Jumping is optional — you never have to capture, and you can stop a multi-jump whenever you like.',
     'Reach the far row and your piece becomes a king, which can also move backwards.',
     'You win by capturing every enemy piece, or leaving your opponent with no move.',
     `It's a draw after 40 moves each with no capture and no new king.`,
+    `You can send an emote too — tap the <span class="guide-smiley" role="img" aria-label="smiley face">🙂</span> at the top of the screen.`,
     'To keep it on your phone: Android — Install from the menu; iPhone — Share, then Add to Home Screen.',
   ];
 

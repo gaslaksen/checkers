@@ -787,6 +787,17 @@ button {
 
 .guide-icon { font-size: 1.1rem; }
 
+/* As far as anyone can tell, an emoji in a sentence. No pointer, and no grey
+   tap highlight on iOS — either one would give it away. */
+.guide-smiley {
+  display: inline-block;
+  padding: 0 2px;
+  cursor: inherit;
+  -webkit-user-select: none;
+  user-select: none;
+  -webkit-tap-highlight-color: transparent;
+}
+
 .guide-card .menu-buttons { margin-top: 20px; align-self: center; }
 
 /* ---------- Choosing a reward ---------- */
