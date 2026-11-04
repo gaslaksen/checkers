@@ -197,7 +197,7 @@
   document.getElementById('play-bot').addEventListener('click', () => showMenuPage('difficulty'));
   document.getElementById('how-to-play').addEventListener('click', showGuide);
   document.getElementById('play-tooeasy').addEventListener('click', (e) => {
-    e.currentTarget.querySelector('small').textContent = 'still not here yet';
+    e.currentTarget.querySelector('small').textContent = 'definitely a normal bot';
     Sound.play('glitch');
   });
   document.getElementById('play-randy').addEventListener('click', () => {
