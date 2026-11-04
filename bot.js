@@ -18,6 +18,9 @@ const Bot = (() => {
     },
     // Searches as deep as it can within the time limit, up to five turns ahead.
     hard: { maxDepth: 5, tolerance: 0, abilities: true, timeLimit: 700 },
+    // Exactly Easy, for as long as it feels like being Easy. What happens
+    // after that isn't in here — see the Too Easy Bot in main.js.
+    tooeasy: { maxDepth: 1, tolerance: 40, randomChance: 0.3, abilities: true },
     // Randy does not think. Randy picks a square and sends it somewhere.
     randy: { random: true, abilities: true },
   };

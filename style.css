@@ -1025,3 +1025,44 @@ body.randy-mode {
 
 body.randy-mode .square.last-move { background: #7a63ad; }
 body.randy-mode .square.selected { background: #8a6fc4; }
+
+/* ---------- The Too Easy Bot's colours ---------- */
+
+body.tooeasy-mode {
+  /* He plays yellow; yours are black. */
+  --red: #34343a;
+  --red-hi: #6a6a73;
+  --red-lo: #111114;
+  --black: #f5c518;
+  --black-hi: #ffe8a3;
+  --black-lo: #9a7406;
+  --board-edge: #4a3c14;
+  --dark-sq: #7d6a33;
+  --light-sq: #f2e9cf;
+  --gold: #ffd95e;
+  --gold-lo: #b98c12;
+  background: radial-gradient(ellipse at 50% 30%, #332a11, var(--bg) 70%);
+}
+
+body.tooeasy-mode .square.last-move { background: #a08b45; }
+body.tooeasy-mode .square.selected { background: #b89a4e; }
+
+/* And once he's had enough of losing. */
+body.tooeasy-mode.mad {
+  --black: #ff9d12;
+  --black-hi: #ffd08a;
+  --black-lo: #8a3a04;
+  --board-edge: #5c2d10;
+  --dark-sq: #8a5a2e;
+  --light-sq: #f3ddc4;
+  background: radial-gradient(ellipse at 50% 30%, #44190d, var(--bg) 70%);
+}
+
+body.tooeasy-mode.mad .square.last-move { background: #ab7340; }
+body.tooeasy-mode.mad .square.selected { background: #c08049; }
+
+/* His name twitches once he's angry. */
+body.tooeasy-mode.mad .panel[data-color="black"] .panel-name {
+  color: #ff9d12;
+  animation: flicker-text 2.4s steps(1, end) infinite;
+}

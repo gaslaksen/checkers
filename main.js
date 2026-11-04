@@ -105,16 +105,22 @@
   let abilityPick = null; // [r, c] picked first, for two-click abilities
   let lastPath = []; // squares visited by the most recent move, for highlighting
   let zCounter = 1;
+  let botMad = false; // the Too Easy Bot has stopped pretending
+  let takenFromBot = 0; // his pieces you've captured
+  let sinceCheat = 1; // his turns since the last one, so he never cheats twice over
 
   const CROWN_SVG =
     '<svg class="crown" viewBox="0 0 24 24" aria-hidden="true">' +
     '<path d="M3 18.5h18L19.6 8l-4.6 4.2L12 5l-3 7.2L4.4 8z"/></svg>';
 
   const isRandy = () => mode === 'bot' && botLevel === 'randy';
-  // Randy plays purple in his own mode, and you play black, so say so.
+  const isTooEasy = () => mode === 'bot' && botLevel === 'tooeasy';
+  // In the secret modes the bot brings its own colour and you play black.
+  const BOT_SKIN = { randy: 'Purple', tooeasy: 'Yellow' };
   const label = (value) => {
-    if (isRandy() && value === BLACK) return 'Purple';
-    if (isRandy() && value === RED) return 'Black';
+    const skin = mode === 'bot' ? BOT_SKIN[botLevel] : null;
+    if (skin && value === BLACK) return skin;
+    if (skin && value === RED) return 'Black';
     return value[0].toUpperCase() + value.slice(1);
   };
   const isAt = (pos, r, c) => !!pos && pos[0] === r && pos[1] === c;
@@ -196,9 +202,9 @@
 
   document.getElementById('play-bot').addEventListener('click', () => showMenuPage('difficulty'));
   document.getElementById('how-to-play').addEventListener('click', showGuide);
-  document.getElementById('play-tooeasy').addEventListener('click', (e) => {
-    e.currentTarget.querySelector('small').textContent = 'definitely a normal bot';
-    Sound.play('glitch');
+  document.getElementById('play-tooeasy').addEventListener('click', () => {
+    screenFlash('tint-gold');
+    startGame('bot', 'tooeasy');
   });
   document.getElementById('play-randy').addEventListener('click', () => {
     screenFlash();
@@ -293,6 +299,11 @@
     gameEl.classList.toggle('online', mode === 'online');
     gameEl.classList.toggle('vs-bot', mode === 'bot');
     document.body.classList.toggle('randy-mode', isRandy());
+    document.body.classList.toggle('tooeasy-mode', isTooEasy());
+    document.body.classList.remove('mad');
+    botMad = false;
+    takenFromBot = 0;
+    sinceCheat = 1;
     menuEl.hidden = true;
     gameEl.hidden = false;
     render();
@@ -322,7 +333,7 @@
 
   function showMenu() {
     session++;
-    document.body.classList.remove('randy-mode');
+    document.body.classList.remove('randy-mode', 'tooeasy-mode', 'mad');
     confirmEl.hidden = true;
     reactionsEl.hidden = true;
     leaveOnline();
@@ -672,6 +683,7 @@
     const result = game.move(move);
     lastActor = mover;
     if (result.captured) turnCaptures++;
+    if (result.captured && isTooEasy() && result.captured.color === BOT_COLOR) takenFromBot++;
     if (result.promoted) turnPromoted = true;
     sfx(result.captured ? 'capture' : 'move');
     if (result.promoted) sfx('crown');
@@ -687,7 +699,8 @@
   // A jump earns a choice, made at the start of that player's next turn.
   function rewardToast({ color, tier }, note) {
     sfx(`reward${capitalize(tier)}`);
-    toast(`${label(color)} earned a ${TIER_NAME[tier]} ability${note}`, tier);
+    const a = tier === 'epic' ? 'an' : 'a';
+    toast(`${label(color)} earned ${a} ${TIER_NAME[tier]} ability${note}`, tier);
   }
 
   function useAbility(action) {
@@ -717,6 +730,7 @@
   // Called whenever a turn ends.
   function afterTurn(skipped) {
     botReactToTurn();
+    checkAnger();
     turnCaptures = 0;
     turnPromoted = false;
     if (skipped) toast(`${label(skipped)} is frozen — turn skipped`, 'rare');
@@ -762,6 +776,12 @@
         if (!applyReward(BOT_COLOR, choice.ability, choice.replace || null)) break;
       }
       if (game.over || !isBotTurn()) return;
+      // Once he's angry, about half his turns aren't turns at all.
+      if (botMad && sinceCheat > 0 && Math.random() < CHEAT_CHANCE && cheatTurn(mySession)) {
+        sinceCheat = 0;
+        return;
+      }
+      sinceCheat++;
       const started = Date.now();
       const { action, hops } = Bot.chooseTurn(game, botLevel);
       const steps = action ? [{ action }, ...hops] : hops;
@@ -789,6 +809,158 @@
         if (mySession === session) playBotSteps(rest, mySession);
       }, HOP_DELAY);
     }
+  }
+
+  // ---------- The Too Easy Bot ----------
+
+  // He is an Easy bot and nothing more, until you take enough off him. Then
+  // he stops bothering with the rules. He can still be beaten: everything he
+  // blows up fills your comeback meter, he never touches a shielded piece,
+  // he never takes your last one, and he still thinks like an Easy bot.
+
+  const MAD_AFTER = 5; // of his pieces, before he snaps
+  const CHEAT_CHANCE = 0.55; // of his turns, once he has
+
+  const botName = () => {
+    if (isTooEasy()) return botMad ? 'TOO EASY BOT' : 'Too Easy Bot';
+    return `Bot · ${label(botLevel)}`;
+  };
+
+  function checkAnger() {
+    if (!isTooEasy() || botMad || game.over || takenFromBot < MAD_AFTER) return;
+    botMad = true;
+    document.body.classList.add('mad');
+    screenFlash('tint-gold');
+    sfx('glitch');
+    toast('The Too Easy Bot is getting mad', 'epic');
+    render();
+  }
+
+  // One of his turns, spent cheating. Returns false if he can't think of
+  // anything, in which case he plays a normal turn after all.
+  function cheatTurn(mySession) {
+    const cheats = [];
+    if (explodeTarget()) cheats.push(cheatExplode);
+    if (illegalMove()) cheats.push(cheatIllegal);
+    if (borrowable().length) cheats.push(cheatBorrow);
+    if (!cheats.length) return false;
+    cheats[Math.floor(Math.random() * cheats.length)](mySession);
+    return true;
+  }
+
+  // Which of your pieces he'd blow up. Not a shielded one, and never your
+  // last — that would be a win, and he hasn't earned one.
+  function explodeTarget() {
+    const men = [];
+    const kings = [];
+    game.forEachPiece(RED, (p, r, c) => {
+      if (!p.shield) (p.king ? kings : men).push([r, c]);
+    });
+    const targets = kings.length ? kings : men; // your best piece first
+    const total = men.length + kings.length;
+    if (!targets.length || total <= 1) return null;
+    return targets[Math.floor(Math.random() * targets.length)];
+  }
+
+  function cheatExplode(mySession) {
+    const at = explodeTarget();
+    if (!at) return;
+    const [r, c] = at;
+    const el = pieceEls.get(game.board[r][c].id);
+    toast('Too Easy Bot blew up your piece', 'epic');
+    sfx('explode');
+    flash(at);
+    animate(el, [
+      { transform: 'scale(1)', filter: 'brightness(1)' },
+      { transform: 'scale(1.7)', filter: 'brightness(3)', offset: 0.3 },
+      { transform: 'scale(0.1)', filter: 'brightness(0.4)' },
+    ], { duration: 420, easing: 'ease-out' });
+
+    game.board[r][c] = null;
+    game.lost[RED]++;
+    game.madeProgress = true; // a piece left the board, so this isn't a stall
+    // You still get the credit for losing it.
+    if (++game.comeback[RED] >= COMEBACK_EVERY) {
+      game.comeback[RED] = 0;
+      rewardToast(game.advanceTrack(RED), ' (comeback)');
+    }
+    botReact('cheated', { always: true });
+    // Let the blast finish before the board moves on.
+    setTimeout(() => {
+      if (mySession !== session) return;
+      const skipped = game.passTurn();
+      render();
+      afterTurn(skipped);
+    }, 420);
+  }
+
+  // Somewhere one of his pieces has no business going: sideways, backwards,
+  // two squares at once. Dark squares only — he cheats, he isn't blind.
+  function illegalMove() {
+    const legal = new Set(game.movesFor(BOT_COLOR).map((m) => `${m.from}>${m.to}`));
+    const options = [];
+    game.forEachPiece(BOT_COLOR, (p, r, c) => {
+      if (p.frozen) return;
+      for (let dr = -2; dr <= 2; dr++) {
+        for (let dc = -2; dc <= 2; dc++) {
+          const to = [r + dr, c + dc];
+          if ((!dr && !dc) || !game.isEmpty(...to) || !isDark(...to)) continue;
+          if (!p.king && to[0] === kingRow(BOT_COLOR)) continue; // no free crowns
+          if (legal.has(`${[r, c]}>${to}`)) continue;
+          options.push({ from: [r, c], to });
+        }
+      }
+    });
+    return options.length ? options[Math.floor(Math.random() * options.length)] : null;
+  }
+
+  function cheatIllegal() {
+    const move = illegalMove();
+    if (!move) return;
+    const [fr, fc] = move.from;
+    const [tr, tc] = move.to;
+    toast('Too Easy Bot moved there. Somehow.', 'rare');
+    sfx('glitch');
+    game.board[tr][tc] = game.board[fr][fc];
+    game.board[fr][fc] = null;
+    lastPath = [move.from, move.to];
+    flash(move.to);
+    const skipped = game.passTurn();
+    render();
+    afterTurn(skipped);
+  }
+
+  // Powers he doesn't have. Granting one and letting the rules apply it keeps
+  // the board honest even when he isn't.
+  function borrowable() {
+    const out = [];
+    for (const id of ABILITY_IDS) {
+      if (game.inventory[BOT_COLOR][id]) continue; // that one's really his
+      game.inventory[BOT_COLOR][id] = 1;
+      const actions = game.abilityActions(id);
+      game.inventory[BOT_COLOR][id] = 0;
+      if (actions.length) out.push(id);
+    }
+    return out;
+  }
+
+  function cheatBorrow(mySession) {
+    const options = borrowable();
+    if (!options.length) return;
+    const ability = options[Math.floor(Math.random() * options.length)];
+    game.inventory[BOT_COLOR][ability] = 1; // just for a moment
+    const actions = game.abilityActions(ability);
+    toast(`Too Easy Bot doesn't have ${ABILITY_INFO[ability].name}`, 'epic');
+    sfx('glitch');
+    useAbility(actions[Math.floor(Math.random() * actions.length)]);
+    game.inventory[BOT_COLOR][ability] = 0; // in case the rules gave it back
+    // That was only half a turn: he still gets to move.
+    if (game.over || game.turn !== BOT_COLOR) return;
+    setTimeout(() => {
+      if (mySession !== session) return;
+      const { hops } = Bot.chooseTurn(game, botLevel);
+      if (hops.length) playBotSteps(hops, mySession);
+    }, HOP_DELAY);
   }
 
   // ---------- Rendering ----------
@@ -872,7 +1044,7 @@
     panel.classList.toggle('active', myTurn);
 
     let name = label(color);
-    if (mode === 'bot') name = isHuman(color) ? 'You' : `Bot · ${label(botLevel)}`;
+    if (mode === 'bot') name = isHuman(color) ? 'You' : botName();
     else if (mode === 'online') name = `${color === myColor ? 'You' : 'Friend'} · ${label(color)}`;
 
     // Reward track: one pip per step in the current cycle.
@@ -1089,13 +1261,14 @@
   // Sparse on purpose: a bot that reacts to everything is annoying.
   const BOT_REACTIONS = {
     bigTurn: ['🎉', '😂', '👍'],      // it took two or more of your pieces
+    cheated: ['😂', '👍'],            // the Too Easy Bot, enjoying itself
     crowned: ['🎉', '👍'],
     youHitBack: ['😮', '🤔'],         // you took two or more of its pieces
     youTookOne: ['🤔', '😮'],
     won: ['🎉', '👍'],
     lost: ['😅', '👍'],
   };
-  const REACT_CHANCE = { easy: 0.5, normal: 0.35, hard: 0.25, randy: 1 };
+  const REACT_CHANCE = { easy: 0.5, normal: 0.35, hard: 0.25, randy: 1, tooeasy: 0.5 };
   const REACT_COOLDOWN = 8000;
   const ALL_REACTIONS = ['👍', '😂', '😮', '😅', '🎉', '🤔'];
 
@@ -1109,7 +1282,7 @@
     const now = Date.now();
     if (!always) {
       if (now - lastBotReaction < REACT_COOLDOWN) return;
-      if (Math.random() > (REACT_CHANCE[botLevel] ?? 0.3)) return;
+      if (Math.random() > (botMad ? 0.8 : REACT_CHANCE[botLevel] ?? 0.3)) return;
     }
     const pool = kind === 'randy' ? ALL_REACTIONS : BOT_REACTIONS[kind];
     lastBotReaction = now;

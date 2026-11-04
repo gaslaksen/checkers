@@ -194,6 +194,16 @@ const Sound = (() => {
       noise(c, at + 0.12, { peak: 0.08, duration: 0.3, filter: 4000, type: 'highpass' });
     },
 
+    // A piece going up: a crack, a low thump, and the debris landing.
+    explode: (c, at) => {
+      noise(c, at, { peak: 0.5, duration: 0.03, filter: 3000, type: 'bandpass' });
+      tone(c, at, { freq: 170, slideTo: 40, type: 'sawtooth', peak: 0.5, duration: 0.3 });
+      noise(c, at + 0.01, { peak: 0.32, duration: 0.34, filter: 1100, type: 'lowpass' });
+      for (let i = 0; i < 4; i++) {
+        knock(c, at + 0.13 + i * 0.06 + Math.random() * 0.03, { pitch: vary(520, 0.3), peak: 0.2, click: 0.16 });
+      }
+    },
+
     // Something in the corner giving way.
     glitch: (c, at) => {
       for (let i = 0; i < 7; i++) {
