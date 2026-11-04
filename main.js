@@ -69,6 +69,8 @@
   };
   const codeDisplayEl = document.getElementById('code-display');
   const codeInputEl = document.getElementById('code-input');
+  // Not a game code. Typed into the join box, it opens something else.
+  const SECRET_CODE = 'RNDY';
   const createStatusEl = document.getElementById('create-status');
   const joinStatusEl = document.getElementById('join-status');
   const gameEl = document.getElementById('game');
@@ -193,11 +195,6 @@
 
   document.getElementById('play-bot').addEventListener('click', () => showMenuPage('difficulty'));
   document.getElementById('how-to-play').addEventListener('click', showGuide);
-  document.getElementById('glitch-corner').addEventListener('click', () => {
-    screenFlash();
-    Sound.play('glitch');
-    showMenuPage('glitch');
-  });
   document.getElementById('play-randy').addEventListener('click', () => {
     screenFlash();
     startGame('bot', 'randy');
@@ -252,31 +249,6 @@
     flash.hidden = false;
     setTimeout(() => { flash.hidden = true; }, 640);
   }
-
-  // Pixels that flicker in the corner of the difficulty screen.
-  (function scatterPixels() {
-    const corner = document.getElementById('glitch-corner');
-    const colors = ['#4dffff', '#ff4d4d', '#f4cf5e', '#c084fc', '#ebe7df'];
-    for (let i = 0; i < 10; i++) {
-      const pixel = document.createElement('span');
-      const size = 1 + Math.floor(Math.random() * 3);
-      pixel.style.width = `${size * (Math.random() < 0.25 ? 3 : 1)}px`;
-      pixel.style.height = `${size}px`;
-      pixel.style.right = `${Math.floor(Math.random() * 26)}px`;
-      pixel.style.top = `${Math.floor(Math.random() * 26)}px`;
-      pixel.style.background = colors[i % colors.length];
-      pixel.style.animationDelay = `${(Math.random() * 1.2).toFixed(2)}s`;
-      corner.appendChild(pixel);
-    }
-    const tear = document.createElement('span');
-    tear.className = 'tear';
-    tear.style.width = '20px';
-    tear.style.height = '2px';
-    tear.style.right = '4px';
-    tear.style.top = '12px';
-    tear.style.background = '#4dffff';
-    corner.appendChild(tear);
-  })();
 
   function showMenuPage(page) {
     for (const [name, el] of Object.entries(menuPages)) el.hidden = name !== page;
@@ -402,6 +374,15 @@
 
   async function joinOnlineGame() {
     const code = Net.normalizeCode(codeInputEl.value);
+    if (code === SECRET_CODE) {
+      // There is no game at the other end of this one.
+      codeInputEl.value = '';
+      setNote(joinStatusEl, '');
+      screenFlash();
+      Sound.play('glitch');
+      showMenuPage('glitch');
+      return;
+    }
     if (code.length !== Net.CODE_LENGTH) {
       setNote(joinStatusEl, `A code is ${Net.CODE_LENGTH} letters and numbers.`, true);
       return;

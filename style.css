@@ -903,48 +903,6 @@ button {
 
 /* ---------- Something in the corner ---------- */
 
-.glitch-corner {
-  position: fixed;
-  /* Clear of the phone's status bar and notch — up against the very edge,
-     taps in that strip never reach the page. */
-  top: calc(env(safe-area-inset-top, 0px) + 6px);
-  right: calc(env(safe-area-inset-right, 0px) + 6px);
-  /* Small to look at, but still big enough to hit with a thumb. */
-  width: 54px;
-  height: 54px;
-  padding: 0;
-  border: none;
-  background: none;
-  opacity: 0.85;
-  cursor: pointer;
-  z-index: 20;
-}
-
-.glitch-corner span {
-  position: absolute;
-  display: block;
-  animation: flicker 1.2s steps(1, end) infinite;
-}
-
-/* Each pixel is lit for about a fifth of its cycle; with random delays that
-   leaves two or three showing at any moment. */
-@keyframes flicker {
-  0%, 36%, 58%, 100% { opacity: 0; }
-  38%, 56% { opacity: 1; }
-}
-
-/* A torn strip that slides now and then */
-.glitch-corner span.tear {
-  animation: tear 2.4s steps(1, end) infinite;
-}
-
-@keyframes tear {
-  0%, 92%, 100% { opacity: 0; transform: translateX(0); }
-  93% { opacity: 0.9; transform: translateX(-6px); }
-  95% { opacity: 0.9; transform: translateX(5px); }
-  97% { opacity: 0.6; transform: translateX(-2px); }
-}
-
 /* The screen tearing when you touch it. Note the name: a bare `.flash` would
    also hit the board squares, which use a flash class of their own. */
 .screen-flash {

@@ -18,10 +18,18 @@ const Net = (() => {
   let conn = null;
   let handlers = {};
 
-  const randomCode = () =>
-    Array.from({ length: CODE_LENGTH }, () =>
-      CODE_ALPHABET[Math.floor(Math.random() * CODE_ALPHABET.length)]
-    ).join('');
+  // One code is spoken for and never handed out: see SECRET_CODE in main.js.
+  const RESERVED = ['RNDY'];
+
+  const randomCode = () => {
+    let code;
+    do {
+      code = Array.from({ length: CODE_LENGTH }, () =>
+        CODE_ALPHABET[Math.floor(Math.random() * CODE_ALPHABET.length)]
+      ).join('');
+    } while (RESERVED.includes(code));
+    return code;
+  };
 
   const normalizeCode = (code) => (code || '').trim().toUpperCase().replace(/[^A-Z0-9]/g, '');
 
@@ -146,7 +154,7 @@ const Net = (() => {
     peer = null;
   }
 
-  return { host, join, send, sayGoodbye, disconnect, isConnected, normalizeCode, CODE_LENGTH };
+  return { host, join, send, sayGoodbye, disconnect, isConnected, normalizeCode, randomCode, CODE_LENGTH, RESERVED };
 })();
 
 if (typeof module !== 'undefined') module.exports = { Net };
