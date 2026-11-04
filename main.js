@@ -246,9 +246,11 @@
 
   // ---------- Screens ----------
 
-  // The display tearing for half a second.
-  function screenFlash() {
+  // The display tearing for half a second. `tint` swaps the colours it tears
+  // in — each secret door flashes in its own.
+  function screenFlash(tint = null) {
     const flash = document.getElementById('screen-flash');
+    flash.className = tint ? `screen-flash ${tint}` : 'screen-flash';
     flash.hidden = true;
     void flash.offsetWidth; // restart the animation
     flash.hidden = false;
@@ -1264,7 +1266,7 @@
   document.getElementById('guide-body').addEventListener('click', (e) => {
     if (!e.target.closest('.guide-smiley') || !gameEl.hidden) return;
     guideEl.hidden = true;
-    screenFlash();
+    screenFlash('tint-gold');
     Sound.play('glitch');
     showMenuPage('tooeasy');
   });

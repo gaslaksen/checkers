@@ -917,6 +917,10 @@ button {
 /* The screen tearing when you touch it. Note the name: a bare `.flash` would
    also hit the board squares, which use a flash class of their own. */
 .screen-flash {
+  /* The colours it tears through; a door can swap them for its own. */
+  --flash-a: var(--rare);
+  --flash-b: var(--red);
+  --flash-c: var(--epic);
   position: fixed;
   inset: 0;
   z-index: 200;
@@ -928,11 +932,11 @@ button {
 @keyframes screen-flash {
   0% { opacity: 0.9; background: #fff; }
   12% { opacity: 0.1; background: #000; }
-  22% { opacity: 0.85; background: var(--rare); }
+  22% { opacity: 0.85; background: var(--flash-a); }
   32% { opacity: 0.1; background: #000; }
-  44% { opacity: 0.7; background: var(--red); }
+  44% { opacity: 0.7; background: var(--flash-b); }
   56% { opacity: 0.05; background: #000; }
-  68% { opacity: 0.6; background: var(--epic); }
+  68% { opacity: 0.6; background: var(--flash-c); }
   80% { opacity: 0.2; background: #000; }
   100% { opacity: 0; background: #000; }
 }
@@ -973,6 +977,12 @@ button {
 .glitch-btn::after { color: var(--glitch-split-b, #7c5cff); animation: split-right 3.1s steps(1, end) infinite; }
 
 /* The other door behind the smiley: the same menu, in yellow. */
+.screen-flash.tint-gold {
+  --flash-a: #ffe27a;
+  --flash-b: #f5c518;
+  --flash-c: #c98a07;
+}
+
 .tint-gold {
   --glitch-tint: #f5c518;
   --glitch-glow: rgba(245, 197, 24, 0.35);
