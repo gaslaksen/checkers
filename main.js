@@ -1497,6 +1497,7 @@
     'You win by capturing every enemy piece, or leaving your opponent with no move.',
     `It's a draw after 40 moves each with no capture and no new king.`,
     `You can send an emote too — tap the <span class="guide-smiley" role="img" aria-label="smiley face">🙂</span> at the top of the screen.`,
+    'Playing online: one of you creates a game and shares the code, the other taps Join Game and types it in — like RNDY.',
     'To keep it on your phone: Android — Install from the menu; iPhone — Share, then Add to Home Screen.',
   ];
 
