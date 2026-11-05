@@ -825,6 +825,17 @@
   const MAD_AFTER = 4; // of his pieces, before he snaps
   const CHEAT_CHANCE = 0.55; // of his turns, once he has
 
+  // How the end screen talks about whichever bot you were playing. The
+  // secret two have names, so "the Tooeasy bot" won't do.
+  function botResultLine(lost) {
+    if (isTooEasy()) {
+      if (lost) return botMad ? 'It cheated, and it still counts.' : 'The Too Easy Bot got you this time.';
+      return botMad ? 'You beat the Too Easy Bot — cheating and all!' : 'You beat the Too Easy Bot!';
+    }
+    if (isRandy()) return lost ? 'Randy got you this time, and has no idea how.' : 'You beat Randy!';
+    return lost ? `The ${label(botLevel)} Bot got you this time.` : `You beat the ${label(botLevel)} Bot!`;
+  }
+
   const botName = () => {
     if (isTooEasy()) return botMad ? 'TOO EASY BOT' : 'Too Easy Bot';
     return `Bot · ${label(botLevel)}`;
@@ -1149,7 +1160,7 @@
     } else if (mode === 'bot') {
       lost = winner === BOT_COLOR;
       title = lost ? 'Bot wins!' : 'You win!';
-      sub = lost ? `The ${label(botLevel)} bot got you this time.` : `You beat the ${label(botLevel)} bot!`;
+      sub = botResultLine(lost);
     } else if (mode === 'online') {
       lost = winner !== myColor;
       title = lost ? 'Friend wins!' : 'You win!';
