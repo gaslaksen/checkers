@@ -135,12 +135,13 @@ button {
 .shape-grid .light { background: var(--light-sq); }
 .shape-grid .off { background: transparent; }
 
-/* Hardest first, once the board chooser is open. */
-#menu-difficulty.reversed .menu-label { order: 0; }
-#menu-difficulty.reversed .level-hard { order: 1; }
-#menu-difficulty.reversed .level-normal { order: 2; }
-#menu-difficulty.reversed .level-easy { order: 3; }
-#menu-difficulty.reversed .menu-back { order: 4; }
+/* With the checkers knocked over, the menus turn upside down too. */
+#menu.shapes-on #menu-main { flex-direction: column-reverse; }
+#menu.shapes-on #menu-difficulty .menu-label { order: 0; }
+#menu.shapes-on #menu-difficulty .level-hard { order: 1; }
+#menu.shapes-on #menu-difficulty .level-normal { order: 2; }
+#menu.shapes-on #menu-difficulty .level-easy { order: 3; }
+#menu.shapes-on #menu-difficulty .menu-back { order: 4; }
 
 .title {
   margin: 0 0 40px;

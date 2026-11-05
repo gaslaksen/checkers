@@ -53,6 +53,7 @@ const SHAPES = {
   plus: { name: 'Plus', size: 8, pieces: 8, fits: (r, c, n) => (r >= n / 4 && r <= n - 1 - n / 4) || (c >= n / 4 && c <= n - 1 - n / 4) },
   hourglass: { name: 'Hourglass', size: 8, pieces: 5, fits: (r, c, n) => Math.abs(c - (n - 1) / 2) <= (n - 1) / 2 - Math.abs(r - (n - 1) / 2) * 0.6 },
   big: { name: 'Big', size: 10, pieces: 20, fits: () => true },
+  bighourglass: { name: 'Big Hourglass', size: 10, pieces: 10, fits: (r, c, n) => Math.abs(c - (n - 1) / 2) <= (n - 1) / 2 - Math.abs(r - (n - 1) / 2) * 0.6 },
   bigx: { name: 'Big X', size: 10, pieces: 6, fits: (r, c, n) => Math.abs(r - c) <= 1 || Math.abs(r + c - (n - 1)) <= 1 },
 };
 const SHAPE_IDS = Object.keys(SHAPES);

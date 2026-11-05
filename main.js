@@ -103,7 +103,7 @@
   let boardShape = 'full'; // which board this game is played on
   let builtShape = null; // the shape the squares on screen were built for
   let shapesOn = false; // the board chooser, once you've found it
-  let pendingLevel = null; // the difficulty picked, while you choose a board
+  let afterShape = null; // what to start once a board is chosen
   let session = 0; // bumped on new game / menu so stale bot timers do nothing
   let selected = null; // [r, c] of the piece picked for a normal move
   let activeAbility = null; // ability being aimed, if any
@@ -231,9 +231,24 @@
   });
   document.getElementById('share-code').addEventListener('click', shareCode);
   document.getElementById('open-multiplayer').addEventListener('click', () => showMenuPage('multiplayer'));
-  document.getElementById('play-local').addEventListener('click', () => startGame('local'));
+  document.getElementById('play-local').addEventListener('click', () => {
+    if (!shapesOn) startGame('local');
+    else chooseBoard('multiplayer', (shape) => startGame('local', null, shape));
+  });
   document.getElementById('open-online').addEventListener('click', () => showMenuPage('online'));
-  document.getElementById('create-game').addEventListener('click', createOnlineGame);
+  document.getElementById('create-game').addEventListener('click', () => {
+    if (!shapesOn) {
+      boardShape = 'full';
+      createOnlineGame();
+      return;
+    }
+    // Whoever makes the game picks the board; their friend gets it with the
+    // first state the host sends.
+    chooseBoard('online', (shape) => {
+      boardShape = shape;
+      createOnlineGame();
+    });
+  });
   document.getElementById('open-join').addEventListener('click', () => {
     showMenuPage('join');
     joinStatusEl.textContent = '';
@@ -267,12 +282,9 @@
   document.getElementById('view-board').addEventListener('click', hideResult);
   for (const btn of menuDifficultyEl.querySelectorAll('[data-level]')) {
     btn.addEventListener('click', () => {
-      if (!shapesOn) {
-        startGame('bot', btn.dataset.level);
-        return;
-      }
-      pendingLevel = btn.dataset.level;
-      showShapeMenu();
+      const level = btn.dataset.level;
+      if (!shapesOn) startGame('bot', level);
+      else chooseBoard('difficulty', (shape) => startGame('bot', level, shape));
     });
   }
 
@@ -284,10 +296,12 @@
   const tokensEl = document.getElementById('menu-tokens');
 
   tokensEl.addEventListener('click', () => {
-    if (menuPages.difficulty.hidden) return; // only on the bot menu
+    // On the menus where it leads somewhere: the first one and the bot one.
+    if (menuPages.main.hidden && menuPages.difficulty.hidden) return;
     shapesOn = !shapesOn;
     knockTokens();
-    menuDifficultyEl.classList.toggle('reversed', shapesOn); // hardest first
+    // Both lists turn upside down: hardest first, How to Play first.
+    menuEl.classList.toggle('shapes-on', shapesOn);
   });
 
   function knockTokens() {
@@ -315,6 +329,13 @@
     }, 190);
   }
 
+  // Ask which board, then do whatever was waiting on the answer.
+  function chooseBoard(backTo, start) {
+    afterShape = start;
+    menuPages.shape.querySelector('[data-back]').dataset.back = backTo;
+    showShapeMenu();
+  }
+
   function showShapeMenu() {
     document.getElementById('shape-list').innerHTML = SHAPE_IDS.map((id) => {
       const mask = shapeMask(id);
@@ -335,7 +356,7 @@
 
   document.getElementById('shape-list').addEventListener('click', (e) => {
     const btn = e.target.closest('[data-shape]');
-    if (btn) startGame('bot', pendingLevel, btn.dataset.shape);
+    if (btn && afterShape) afterShape(btn.dataset.shape);
   });
 
   // ---------- Screens ----------
@@ -358,7 +379,7 @@
   function startGame(newMode, level, shape = 'full') {
     mode = newMode;
     if (level) botLevel = level;
-    boardShape = mode === 'bot' ? shape : 'full'; // shapes are a bot thing
+    boardShape = shape; // an online guest gets the host's board on restore
     if (mode !== 'online') {
       myColor = RED;
       isHost = false;
@@ -448,7 +469,7 @@
         if (!asHost) return; // the guest waits for the host's first state
         isHost = true;
         myColor = RED;
-        startGame('online');
+        startGame('online', null, boardShape); // the board you picked
         Net.send({ type: 'start', state: game.snapshot() });
       },
       message: (msg) => {
