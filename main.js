@@ -1345,6 +1345,11 @@
   let rewardPick = null; // the ability chosen, while deciding what it replaces
   let rewardColor = null; // who is choosing
   let rewardKey = null; // the offer on screen, so it isn't rebuilt needlessly
+  // A beat before the chooser covers the board, so whatever earned it — your
+  // own jump, or the Too Easy Bot blowing a piece up — is seen first.
+  const REWARD_DELAY = 1000;
+  let rewardWaitKey = null; // the offer being waited on
+  let rewardTimer = null;
 
   document.getElementById('reward-skip').addEventListener('click', () => sendReward(null));
   document.getElementById('reward-options').addEventListener('click', (e) => {
@@ -1380,12 +1385,24 @@
     const offer = color && game.pendingReward(color);
     if (!offer) {
       rewardEl.hidden = true;
+      rewardWaitKey = null;
       return;
     }
     // Already showing this same offer? Leave it alone — rebuilding would
     // undo a half-made choice when the other player's move arrives.
     const key = `${color}:${offer.tier}:${offer.options.join(',')}`;
     if (!rewardEl.hidden && rewardKey === key) return;
+    // A new offer waits a second, then renders again and falls through here.
+    if (rewardWaitKey !== key) {
+      rewardWaitKey = key;
+      clearTimeout(rewardTimer);
+      const mySession = session;
+      rewardTimer = setTimeout(() => {
+        rewardTimer = null;
+        if (mySession === session) render();
+      }, REWARD_DELAY);
+    }
+    if (rewardTimer) return;
     rewardKey = key;
     rewardPick = null;
     rewardColor = color;
@@ -1394,7 +1411,7 @@
     const full = game.tierCount(offer.color, offer.tier) >= TIER_LIMITS[offer.tier];
     document.getElementById('reward-sub').textContent = full
       ? `Your ${TIER_NAME[offer.tier]} slots are full — take one of these in place of one you hold, or keep what you have.`
-      : `You earned a ${TIER_NAME[offer.tier]} ability. Pick one.`;
+      : `You earned ${offer.tier === 'epic' ? 'an' : 'a'} ${TIER_NAME[offer.tier]} ability. Pick one.`;
     document.getElementById('reward-options').innerHTML = offer.options.map(optionButton).join('');
     document.getElementById('reward-swap').hidden = true;
     document.getElementById('reward-skip').textContent = full ? 'Keep what I have' : 'No thanks';
