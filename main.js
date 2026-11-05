@@ -339,6 +339,7 @@
     document.body.classList.remove('randy-mode', 'tooeasy-mode', 'mad');
     confirmEl.hidden = true;
     reactionsEl.hidden = true;
+    hideReward();
     hideAnnounce();
     leaveOnline();
     hideResult();
@@ -1384,19 +1385,27 @@
   // Whoever on this device has a reward waiting — usually the player who just
   // jumped, so they choose straight away instead of waiting for their opponent.
   function rewardChooser() {
-    if (connectionLost) return null;
+    if (connectionLost || game.over) return null; // the jump that wins needs no reward
     for (const color of [lastActor, game.turn, opponent(game.turn)]) {
       if (color && isHuman(color) && game.pendingReward(color)) return color;
     }
     return null;
   }
 
+  function hideReward() {
+    clearTimeout(rewardTimer);
+    rewardTimer = null;
+    rewardWaitKey = null;
+    rewardKey = null;
+    rewardPick = null;
+    rewardEl.hidden = true;
+  }
+
   function maybeShowReward() {
     const color = rewardChooser();
     const offer = color && game.pendingReward(color);
     if (!offer) {
-      rewardEl.hidden = true;
-      rewardWaitKey = null;
+      hideReward();
       return;
     }
     // Already showing this same offer? Leave it alone — rebuilding would
