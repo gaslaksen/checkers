@@ -106,6 +106,7 @@
   let lastPath = []; // squares visited by the most recent move, for highlighting
   let zCounter = 1;
   let botMad = false; // the Too Easy Bot has stopped pretending
+  let angerPending = false; // he's snapped, but you haven't been told yet
   let takenFromBot = 0; // his pieces you've captured
   let sinceCheat = 1; // his turns since the last one, so he never cheats twice over
 
@@ -286,6 +287,7 @@
     message = null;
     messageQueue.length = 0;
     hideResult();
+    hideAnnounce();
     // Online, the player on black sees the board from their own side.
     const shouldFlip = mode === 'online' && myColor === BLACK;
     if (shouldFlip !== flipped) {
@@ -302,6 +304,7 @@
     document.body.classList.toggle('tooeasy-mode', isTooEasy());
     document.body.classList.remove('mad');
     botMad = false;
+    angerPending = false;
     takenFromBot = 0;
     sinceCheat = 1;
     menuEl.hidden = true;
@@ -336,6 +339,7 @@
     document.body.classList.remove('randy-mode', 'tooeasy-mode', 'mad');
     confirmEl.hidden = true;
     reactionsEl.hidden = true;
+    hideAnnounce();
     leaveOnline();
     hideResult();
     showMenuPage('main');
@@ -818,7 +822,7 @@
   // blows up fills your comeback meter, he never touches a shielded piece,
   // he never takes your last one, and he still thinks like an Easy bot.
 
-  const MAD_AFTER = 5; // of his pieces, before he snaps
+  const MAD_AFTER = 4; // of his pieces, before he snaps
   const CHEAT_CHANCE = 0.55; // of his turns, once he has
 
   const botName = () => {
@@ -827,13 +831,27 @@
   };
 
   function checkAnger() {
-    if (!isTooEasy() || botMad || game.over || takenFromBot < MAD_AFTER) return;
-    botMad = true;
-    document.body.classList.add('mad');
-    screenFlash('tint-gold');
-    sfx('glitch');
-    toast('The Too Easy Bot is getting mad', 'epic');
-    render();
+    if (!isTooEasy() || botMad || angerPending || game.over || takenFromBot < MAD_AFTER) return;
+    angerPending = true;
+    // The fourth piece is usually one you jumped, so you're busy claiming the
+    // reward for it. Wait until that's out of the way — a message behind the
+    // chooser is a message you never saw.
+    const mySession = session;
+    const reveal = (waited) => {
+      if (mySession !== session || game.over) return;
+      if (dialogOpen() && waited < 30000) {
+        setTimeout(() => reveal(waited + 250), 250);
+        return;
+      }
+      angerPending = false;
+      botMad = true;
+      document.body.classList.add('mad');
+      screenFlash('tint-gold');
+      sfx('glitch');
+      announce('The Too Easy Bot is getting mad');
+      render();
+    };
+    setTimeout(() => reveal(0), 400);
   }
 
   // One of his turns, spent cheating. Returns false if he can't think of
@@ -1666,6 +1684,27 @@
     setTimeout(() => {
       if (message && message.id === mine) nextMessage();
     }, MESSAGE_MS);
+  }
+
+  // Big, centred, and gone again. For the one thing you mustn't miss.
+  let announceId = 0;
+
+  const hideAnnounce = () => {
+    announceId++;
+    document.getElementById('announce').hidden = true;
+  };
+
+  function announce(text, ms = 2400) {
+    const el = document.getElementById('announce');
+    el.textContent = text;
+    el.classList.remove('show');
+    el.hidden = false;
+    void el.offsetWidth; // restart the animation
+    el.classList.add('show');
+    const mine = ++announceId;
+    setTimeout(() => {
+      if (mine === announceId) el.hidden = true;
+    }, ms);
   }
 
   function flash([r, c]) {

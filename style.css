@@ -914,6 +914,39 @@ button {
 
 /* ---------- Something in the corner ---------- */
 
+/* A message across the middle of the screen, over the board. It takes no
+   clicks, so it can never swallow a tap meant for a piece. */
+.announce {
+  position: fixed;
+  inset: 0;
+  z-index: 180;
+  display: grid;
+  place-items: center;
+  padding: 0 24px;
+  pointer-events: none;
+  font-size: clamp(1.4rem, 7vw, 2.3rem);
+  font-weight: 800;
+  text-align: center;
+  line-height: 1.2;
+  color: #ff9d12;
+  text-shadow: 0 2px 0 #000, 0 0 26px rgba(255, 157, 18, 0.55);
+  /* A soft pool of shadow so the words stay readable over the board. */
+  background: radial-gradient(ellipse at center, rgba(0, 0, 0, 0.78) 0%,
+    rgba(0, 0, 0, 0.6) 32%, rgba(0, 0, 0, 0) 68%);
+}
+
+.announce.show { animation: announce 2.4s ease-out forwards; }
+
+@keyframes announce {
+  0% { opacity: 0; transform: scale(0.82); }
+  10% { opacity: 1; transform: scale(1.06); }
+  16% { transform: rotate(-1.5deg); }
+  22% { transform: rotate(1.5deg); }
+  28% { transform: rotate(0); }
+  82% { opacity: 1; }
+  100% { opacity: 0; transform: scale(1.05); }
+}
+
 /* The screen tearing when you touch it. Note the name: a bare `.flash` would
    also hit the board squares, which use a flash class of their own. */
 .screen-flash {
