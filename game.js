@@ -41,10 +41,6 @@ for (const id of ABILITY_IDS) (POOLS[ABILITIES[id].tier] ||= []).push(id);
 // part of the board; the dark ones among those are the ones you play on. A
 // shape has to look the same after a half turn, or one player would start
 // with more pieces than the other.
-// `pieces` is how many each side starts with, filling from their own end.
-// The small boards get small armies: crowd them and the first player simply
-// runs out of squares and loses without a piece being taken. These numbers
-// come from playing each shape out (see the note in README).
 // `fits` is given the square and how big the board is, so the same shape
 // works at any size. `pieces` is how many each side starts with, filling
 // from their own end. That number matters: crowd a small board and the
