@@ -3,10 +3,11 @@
 const assert = require('assert');
 const { engine, CheckersGame, RED, BLACK, pieceCount, botTurn } = require('./helpers');
 
-const { SHAPES, SHAPE_IDS, SIZE, isDark, shapeMask } = engine;
+const { SHAPES, SHAPE_IDS, isDark, shapeMask } = engine;
 
-const squares = (game, fn) => {
-  for (let r = 0; r < SIZE; r++) for (let c = 0; c < SIZE; c++) fn(r, c);
+// Boards differ in size, so always walk the one in front of you.
+const squares = (n, fn) => {
+  for (let r = 0; r < n; r++) for (let c = 0; c < n; c++) fn(r, c);
 };
 
 module.exports = {
@@ -14,8 +15,9 @@ module.exports = {
     // Otherwise one player starts with more squares than the other.
     for (const id of SHAPE_IDS) {
       const mask = shapeMask(id);
-      squares(new CheckersGame(), (r, c) => {
-        assert.strictEqual(mask[r][c], mask[SIZE - 1 - r][SIZE - 1 - c],
+      const n = SHAPES[id].size;
+      squares(n, (r, c) => {
+        assert.strictEqual(mask[r][c], mask[n - 1 - r][n - 1 - c],
           `${id} is lopsided at ${r},${c}`);
       });
     }
@@ -34,7 +36,7 @@ module.exports = {
     for (const id of SHAPE_IDS) {
       const game = new CheckersGame();
       game.reset(id);
-      squares(game, (r, c) => {
+      squares(SHAPES[id].size, (r, c) => {
         if (!game.board[r][c]) return;
         assert(game.mask[r][c], `${id} has a piece in a hole at ${r},${c}`);
         assert(isDark(r, c), `${id} has a piece on a light square at ${r},${c}`);
@@ -47,8 +49,9 @@ module.exports = {
       const game = new CheckersGame();
       game.reset(id);
       assert(game.legalMoves().length > 0, `${id} starts with no moves`);
-      for (const row of [0, SIZE - 1]) {
-        const reachable = [...Array(SIZE).keys()].some((c) => game.mask[row][c] && isDark(row, c));
+      const n = SHAPES[id].size;
+      for (const row of [0, n - 1]) {
+        const reachable = [...Array(n).keys()].some((c) => game.mask[row][c] && isDark(row, c));
         assert(reachable, `${id} has no king row at row ${row}`);
       }
     }
@@ -85,8 +88,19 @@ module.exports = {
     const copy = new CheckersGame();
     copy.restore(JSON.parse(JSON.stringify(game.snapshot())));
     assert.strictEqual(copy.shape, 'diamond');
-    squares(game, (r, c) => assert.strictEqual(copy.mask[r][c], game.mask[r][c]));
+    squares(SHAPES.diamond.size, (r, c) => assert.strictEqual(copy.mask[r][c], game.mask[r][c]));
     assert.strictEqual(copy.legalMoves().length, game.legalMoves().length);
+  },
+
+  'a bigger board really is bigger'() {
+    const game = new CheckersGame();
+    game.reset('big');
+    assert.strictEqual(engine.SIZE, 10, 'the size follows the board');
+    assert.strictEqual(pieceCount(game, RED), 20);
+    assert(game.onBoard(9, 8), 'row nine exists');
+    game.reset('full');
+    assert.strictEqual(engine.SIZE, 8, 'and goes back again');
+    assert.strictEqual(game.onBoard(9, 8), false);
   },
 
   'a clone keeps the shape'() {

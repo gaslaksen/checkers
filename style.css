@@ -123,7 +123,7 @@ button {
 /* A little picture of the board, drawn from the shape itself. */
 .shape-grid {
   display: grid;
-  grid-template-columns: repeat(8, 1fr);
+  grid-template-columns: repeat(var(--n, 8), 1fr);
   width: 48px;
   height: 48px;
   flex: none;
@@ -293,8 +293,9 @@ button {
   position: absolute;
   inset: 0;
   display: grid;
-  grid-template-columns: repeat(8, 1fr);
-  grid-template-rows: repeat(8, 1fr);
+  /* --n is how many squares across; the game sets it when it builds them. */
+  grid-template-columns: repeat(var(--n, 8), 1fr);
+  grid-template-rows: repeat(var(--n, 8), 1fr);
 }
 
 .square { position: relative; }
@@ -329,8 +330,8 @@ button {
   position: absolute;
   top: 0;
   left: 0;
-  width: 12.5%;
-  height: 12.5%;
+  width: calc(100% / var(--n, 8));
+  height: calc(100% / var(--n, 8));
   display: grid;
   place-items: center;
   transition: transform 220ms ease;

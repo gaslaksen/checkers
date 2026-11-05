@@ -4,6 +4,9 @@
 const path = require('path');
 const engine = require(path.join(__dirname, '..', 'game.js'));
 Object.assign(globalThis, engine);
+// SIZE changes with the board being played, so the global has to follow it
+// instead of keeping the value it had when the tests started.
+Object.defineProperty(globalThis, 'SIZE', { configurable: true, get: () => engine.SIZE });
 const { Bot } = require(path.join(__dirname, '..', 'bot.js'));
 
 const { CheckersGame, RED, BLACK } = engine;

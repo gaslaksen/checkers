@@ -1,7 +1,10 @@
 // Super Checkers rules engine: American checkers (jumping optional) plus
 // abilities earned by jumping. Pure game state and rules — no DOM.
 
-const SIZE = 8;
+// How many squares across the board is. Most boards are the usual eight,
+// but a shape can ask for a bigger one, so this follows the game being
+// played — every file reads it live rather than keeping a copy.
+let SIZE = 8;
 const RED = 'red';
 const BLACK = 'black';
 
@@ -42,20 +45,29 @@ for (const id of ABILITY_IDS) (POOLS[ABILITIES[id].tier] ||= []).push(id);
 // The small boards get small armies: crowd them and the first player simply
 // runs out of squares and loses without a piece being taken. These numbers
 // come from playing each shape out (see the note in README).
+// `fits` is given the square and how big the board is, so the same shape
+// works at any size. `pieces` is how many each side starts with, filling
+// from their own end. That number matters: crowd a small board and the
+// first player simply runs out of squares and loses without a piece being
+// taken. These come from playing each shape out.
 const SHAPES = {
-  full: { name: 'Classic', pieces: 12, fits: () => true },
-  x: { name: 'X', pieces: 6, fits: (r, c) => Math.abs(r - c) <= 1 || Math.abs(r + c - 7) <= 1 },
-  diamond: { name: 'Diamond', pieces: 6, fits: (r, c) => Math.abs(r - 3.5) + Math.abs(c - 3.5) <= 4.5 },
-  plus: { name: 'Plus', pieces: 8, fits: (r, c) => (r >= 2 && r <= 5) || (c >= 2 && c <= 5) },
-  hourglass: { name: 'Hourglass', pieces: 5, fits: (r, c) => Math.abs(c - 3.5) <= 3.5 - Math.abs(r - 3.5) * 0.6 },
+  full: { name: 'Classic', size: 8, pieces: 12, fits: () => true },
+  x: { name: 'X', size: 8, pieces: 6, fits: (r, c, n) => Math.abs(r - c) <= 1 || Math.abs(r + c - (n - 1)) <= 1 },
+  diamond: { name: 'Diamond', size: 8, pieces: 6, fits: (r, c, n) => Math.abs(r - (n - 1) / 2) + Math.abs(c - (n - 1) / 2) <= n / 2 + 0.5 },
+  plus: { name: 'Plus', size: 8, pieces: 8, fits: (r, c, n) => (r >= n / 4 && r <= n - 1 - n / 4) || (c >= n / 4 && c <= n - 1 - n / 4) },
+  hourglass: { name: 'Hourglass', size: 8, pieces: 5, fits: (r, c, n) => Math.abs(c - (n - 1) / 2) <= (n - 1) / 2 - Math.abs(r - (n - 1) / 2) * 0.6 },
+  big: { name: 'Big', size: 10, pieces: 20, fits: () => true },
+  bigx: { name: 'Big X', size: 10, pieces: 6, fits: (r, c, n) => Math.abs(r - c) <= 1 || Math.abs(r + c - (n - 1)) <= 1 },
 };
 const SHAPE_IDS = Object.keys(SHAPES);
 
-// Which squares exist, as an 8x8 grid of true/false.
+const shapeSize = (shape) => (SHAPES[shape] || SHAPES.full).size;
+
+// Which squares exist, as a grid of true/false the size of that board.
 const shapeMask = (shape) => {
-  const fits = (SHAPES[shape] || SHAPES.full).fits;
-  return Array.from({ length: SIZE }, (_, r) =>
-    Array.from({ length: SIZE }, (_, c) => !!fits(r, c)));
+  const { fits, size } = SHAPES[shape] || SHAPES.full;
+  return Array.from({ length: size }, (_, r) =>
+    Array.from({ length: size }, (_, c) => !!fits(r, c, size)));
 };
 
 const DIAGONALS = [[-1, -1], [-1, 1], [1, -1], [1, 1]];
@@ -80,6 +92,7 @@ class CheckersGame {
 
   reset(shape = 'full') {
     this.shape = SHAPES[shape] ? shape : 'full';
+    SIZE = shapeSize(this.shape); // the board everything else measures against
     this.mask = shapeMask(this.shape);
     this.board = Array.from({ length: SIZE }, () => Array(SIZE).fill(null));
     // Every square you can play on, from black's end to red's. Each side
@@ -112,6 +125,7 @@ class CheckersGame {
   }
 
   clone() {
+    SIZE = shapeSize(this.shape); // searches and tests hop between boards
     const g = Object.create(CheckersGame.prototype);
     g.rng = this.rng;
     g.shape = this.shape;
@@ -158,6 +172,7 @@ class CheckersGame {
   restore(state) {
     Object.assign(this, JSON.parse(JSON.stringify(state)));
     this.shape = SHAPES[this.shape] ? this.shape : 'full';
+    SIZE = shapeSize(this.shape);
     this.mask = shapeMask(this.shape); // derived, so it isn't sent
   }
 
@@ -579,8 +594,10 @@ class CheckersGame {
 
 if (typeof module !== 'undefined') {
   module.exports = {
-    CheckersGame, SIZE, RED, BLACK, ABILITIES, ABILITY_IDS, REWARD_TRACK,
+    CheckersGame, RED, BLACK, ABILITIES, ABILITY_IDS, REWARD_TRACK,
     TIER_LIMITS, COMEBACK_EVERY, DRAW_AFTER, SHAPES, SHAPE_IDS, shapeMask,
-    isDark, opponent, rewardTier,
+    shapeSize, isDark, opponent, rewardTier,
   };
+  // SIZE follows the board in play, so it's read fresh rather than copied.
+  Object.defineProperty(module.exports, 'SIZE', { enumerable: true, get: () => SIZE });
 }

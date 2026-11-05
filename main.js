@@ -161,6 +161,7 @@
   }
 
   function buildSquares() {
+    gameEl.style.setProperty('--n', SIZE); // squares across, for the CSS grid
     squaresEl.innerHTML = '';
     squareEls.length = 0;
     for (let r = 0; r < SIZE; r++) squareEls.push([]);
@@ -317,16 +318,17 @@
   function showShapeMenu() {
     document.getElementById('shape-list').innerHTML = SHAPE_IDS.map((id) => {
       const mask = shapeMask(id);
+      const n = SHAPES[id].size;
       const cells = [];
-      for (let r = 0; r < SIZE; r++) {
-        for (let c = 0; c < SIZE; c++) {
+      for (let r = 0; r < n; r++) {
+        for (let c = 0; c < n; c++) {
           cells.push(`<span class="${!mask[r][c] ? 'off' : isDark(r, c) ? 'dark' : 'light'}"></span>`);
         }
       }
       return `<button type="button" class="shape-btn" data-shape="${id}">
-        <span class="shape-grid" aria-hidden="true">${cells.join('')}</span>
+        <span class="shape-grid" style="--n: ${n}" aria-hidden="true">${cells.join('')}</span>
         <span class="shape-text"><b>${SHAPES[id].name}</b>
-        <small>${SHAPES[id].pieces} each</small></span></button>`;
+        <small>${SHAPES[id].size}&times;${SHAPES[id].size}, ${SHAPES[id].pieces} each</small></span></button>`;
     }).join('');
     showMenuPage('shape');
   }
