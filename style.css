@@ -90,6 +90,58 @@ button {
 .menu-tokens .token.black { transform: translateX(10px) rotate(-8deg); }
 .menu-tokens .token.red { transform: translateX(-10px) translateY(-6px) rotate(8deg); }
 
+/* After the black one knocks the red one aside, they trade places and poses. */
+.menu-tokens.swapped { flex-direction: row-reverse; }
+.menu-tokens.swapped .token.black { transform: translateX(-10px) translateY(-6px) rotate(8deg); }
+.menu-tokens.swapped .token.red { transform: translateX(10px) rotate(-8deg); }
+
+.shape-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(132px, 1fr));
+  gap: 10px;
+  width: 100%;
+}
+
+.shape-btn {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 12px;
+  border: 1px solid #45464d;
+  border-radius: 12px;
+  background: #2a2b31;
+  text-align: left;
+}
+
+@media (hover: hover) {
+  .shape-btn:hover { border-color: var(--gold); }
+}
+
+.shape-btn b { display: block; font-size: 1rem; }
+.shape-btn small { color: var(--muted); font-size: 0.72rem; }
+
+/* A little picture of the board, drawn from the shape itself. */
+.shape-grid {
+  display: grid;
+  grid-template-columns: repeat(8, 1fr);
+  width: 48px;
+  height: 48px;
+  flex: none;
+  border-radius: 3px;
+  overflow: hidden;
+}
+
+.shape-grid .dark { background: var(--dark-sq); }
+.shape-grid .light { background: var(--light-sq); }
+.shape-grid .off { background: transparent; }
+
+/* Hardest first, once the board chooser is open. */
+#menu-difficulty.reversed .menu-label { order: 0; }
+#menu-difficulty.reversed .level-hard { order: 1; }
+#menu-difficulty.reversed .level-normal { order: 2; }
+#menu-difficulty.reversed .level-easy { order: 3; }
+#menu-difficulty.reversed .menu-back { order: 4; }
+
 .title {
   margin: 0 0 40px;
   display: flex;
@@ -246,6 +298,8 @@ button {
 }
 
 .square { position: relative; }
+/* Shapes other than Classic have holes: no square, nothing to tap. */
+.square.void { background: transparent; pointer-events: none; }
 .square.light { background: var(--light-sq); }
 .square.dark { background: var(--dark-sq); }
 .square.last-move { background: #a8783f; }

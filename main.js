@@ -61,6 +61,7 @@
   const menuPages = {
     main: document.getElementById('menu-main'),
     difficulty: document.getElementById('menu-difficulty'),
+    shape: document.getElementById('menu-shape'),
     glitch: document.getElementById('menu-glitch'),
     tooeasy: document.getElementById('menu-tooeasy'),
     multiplayer: document.getElementById('menu-multiplayer'),
@@ -99,6 +100,10 @@
   let netAction = null; // online host: the ability used, so the guest can show it
   let netActor = null; // online host: whose action this was
   let flipped = false; // draw the board from black's side
+  let boardShape = 'full'; // which board this game is played on
+  let builtShape = null; // the shape the squares on screen were built for
+  let shapesOn = false; // the board chooser, once you've found it
+  let pendingLevel = null; // the difficulty picked, while you choose a board
   let session = 0; // bumped on new game / menu so stale bot timers do nothing
   let selected = null; // [r, c] of the piece picked for a normal move
   let activeAbility = null; // ability being aimed, if any
@@ -145,6 +150,16 @@
 
   // Black's side plays with the board turned around, so their pieces are
   // nearest to them. Squares keep their real coordinates either way.
+  // The squares on screen have to match the board being played: the side
+  // it's seen from online, and which squares exist at all.
+  function syncBoardFrame() {
+    const shouldFlip = mode === 'online' && myColor === BLACK;
+    if (shouldFlip === flipped && builtShape === game.shape) return;
+    flipped = shouldFlip;
+    builtShape = game.shape;
+    buildSquares();
+  }
+
   function buildSquares() {
     squaresEl.innerHTML = '';
     squareEls.length = 0;
@@ -154,7 +169,9 @@
         const r = flipped ? SIZE - 1 - i : i;
         const c = flipped ? SIZE - 1 - j : j;
         const sq = document.createElement('div');
-        sq.className = 'square ' + (isDark(r, c) ? 'dark' : 'light');
+        // Shapes other than Classic leave holes where there's no square.
+        const kind = !game.mask[r][c] ? 'void' : isDark(r, c) ? 'dark' : 'light';
+        sq.className = 'square ' + kind;
         sq.dataset.r = r;
         sq.dataset.c = c;
         squaresEl.appendChild(sq);
@@ -248,8 +265,76 @@
   document.getElementById('result-menu').addEventListener('click', showMenu);
   document.getElementById('view-board').addEventListener('click', hideResult);
   for (const btn of menuDifficultyEl.querySelectorAll('[data-level]')) {
-    btn.addEventListener('click', () => startGame('bot', btn.dataset.level));
+    btn.addEventListener('click', () => {
+      if (!shapesOn) {
+        startGame('bot', btn.dataset.level);
+        return;
+      }
+      pendingLevel = btn.dataset.level;
+      showShapeMenu();
+    });
   }
+
+  // ---------- The board chooser ----------
+
+  // Tap the two checkers above the title while you're picking a difficulty
+  // and the black one takes the red one — and the king's crown with it. Do
+  // that and you get to choose what shape the board is.
+  const tokensEl = document.getElementById('menu-tokens');
+
+  tokensEl.addEventListener('click', () => {
+    if (menuPages.difficulty.hidden) return; // only on the bot menu
+    shapesOn = !shapesOn;
+    knockTokens();
+    menuDifficultyEl.classList.toggle('reversed', shapesOn); // hardest first
+  });
+
+  function knockTokens() {
+    const black = tokensEl.querySelector('.token.black');
+    const red = tokensEl.querySelector('.token.red');
+    const hitter = shapesOn ? black : red;
+    const hit = shapesOn ? red : black;
+    const way = hitter === black ? 1 : -1;
+    hitter.animate([
+      { transform: 'translateX(0)' },
+      { transform: `translateX(${way * 34}px)`, offset: 0.4 },
+      { transform: 'translateX(0)' },
+    ], { duration: 460, easing: 'ease-in-out' });
+    hit.animate([
+      { transform: 'translateX(0) rotate(0)' },
+      { transform: `translateX(${way * 26}px) rotate(${way * 26}deg)`, offset: 0.55 },
+      { transform: 'translateX(0) rotate(0)' },
+    ], { duration: 520, easing: 'ease-out' });
+    // The crown and the places change hands halfway through the knock.
+    setTimeout(() => {
+      Sound.play('capture');
+      black.classList.toggle('king', shapesOn);
+      red.classList.toggle('king', !shapesOn);
+      tokensEl.classList.toggle('swapped', shapesOn);
+    }, 190);
+  }
+
+  function showShapeMenu() {
+    document.getElementById('shape-list').innerHTML = SHAPE_IDS.map((id) => {
+      const mask = shapeMask(id);
+      const cells = [];
+      for (let r = 0; r < SIZE; r++) {
+        for (let c = 0; c < SIZE; c++) {
+          cells.push(`<span class="${!mask[r][c] ? 'off' : isDark(r, c) ? 'dark' : 'light'}"></span>`);
+        }
+      }
+      return `<button type="button" class="shape-btn" data-shape="${id}">
+        <span class="shape-grid" aria-hidden="true">${cells.join('')}</span>
+        <span class="shape-text"><b>${SHAPES[id].name}</b>
+        <small>${SHAPES[id].pieces} each</small></span></button>`;
+    }).join('');
+    showMenuPage('shape');
+  }
+
+  document.getElementById('shape-list').addEventListener('click', (e) => {
+    const btn = e.target.closest('[data-shape]');
+    if (btn) startGame('bot', pendingLevel, btn.dataset.shape);
+  });
 
   // ---------- Screens ----------
 
@@ -268,16 +353,17 @@
     for (const [name, el] of Object.entries(menuPages)) el.hidden = name !== page;
   }
 
-  function startGame(newMode, level) {
+  function startGame(newMode, level, shape = 'full') {
     mode = newMode;
     if (level) botLevel = level;
+    boardShape = mode === 'bot' ? shape : 'full'; // shapes are a bot thing
     if (mode !== 'online') {
       myColor = RED;
       isHost = false;
     }
     session++;
     pendingIntent = false;
-    game.reset();
+    game.reset(boardShape);
     selected = null;
     activeAbility = null;
     abilityPick = null;
@@ -288,12 +374,7 @@
     messageQueue.length = 0;
     hideResult();
     hideAnnounce();
-    // Online, the player on black sees the board from their own side.
-    const shouldFlip = mode === 'online' && myColor === BLACK;
-    if (shouldFlip !== flipped) {
-      flipped = shouldFlip;
-      buildSquares();
-    }
+    syncBoardFrame();
     // Two players on one device: the top half is turned around for the player
     // sitting opposite, and each side gets its own status bar and Menu button.
     gameEl.classList.toggle('hotseat', mode === 'local');
@@ -317,7 +398,7 @@
       Net.send({ type: 'intent', kind: 'restart' });
       return;
     }
-    startGame(mode);
+    startGame(mode, null, boardShape); // same board again
     if (mode === 'online') Net.send({ type: 'start', state: game.snapshot() });
   }
 
@@ -996,6 +1077,7 @@
   // ---------- Rendering ----------
 
   function render() {
+    syncBoardFrame(); // an online guest can be sent a board of another shape
     const myTurn = canAct();
     const moves = myTurn && !activeAbility ? game.legalMoves() : [];
     const targets = selected ? moves.filter((m) => isAt(m.from, ...selected)) : [];

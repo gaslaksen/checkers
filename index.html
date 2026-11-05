@@ -17,8 +17,10 @@
 </head>
 <body>
   <section id="menu" class="menu">
-    <div class="menu-tokens" aria-hidden="true">
-      <div class="token black"><div class="disc"></div></div>
+    <div id="menu-tokens" class="menu-tokens" aria-hidden="true">
+      <div class="token black"><div class="disc">
+        <svg class="crown" viewBox="0 0 24 24"><path d="M3 18.5h18L19.6 8l-4.6 4.2L12 5l-3 7.2L4.4 8z"/></svg>
+      </div></div>
       <div class="token red king"><div class="disc">
         <svg class="crown" viewBox="0 0 24 24"><path d="M3 18.5h18L19.6 8l-4.6 4.2L12 5l-3 7.2L4.4 8z"/></svg>
       </div></div>
@@ -93,6 +95,11 @@
         <small>Thinks far ahead</small>
       </button>
       <button type="button" class="menu-back" data-back="main">Back</button>
+    </div>
+    <div id="menu-shape" class="menu-buttons" hidden>
+      <p class="menu-label">Choose a board</p>
+      <div id="shape-list" class="shape-list"></div>
+      <button type="button" class="menu-back" data-back="difficulty">Back</button>
     </div>
     <div id="menu-glitch" class="menu-buttons" hidden>
       <p class="menu-label glitch-label">?????</p>

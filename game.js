@@ -34,6 +34,30 @@ const MOVE_ABILITIES = ABILITY_IDS.filter((id) => ABILITIES[id].kind === 'move')
 const POOLS = {};
 for (const id of ABILITY_IDS) (POOLS[ABILITIES[id].tier] ||= []).push(id);
 
+// Boards that aren't the usual rectangle. Each shape says which squares are
+// part of the board; the dark ones among those are the ones you play on. A
+// shape has to look the same after a half turn, or one player would start
+// with more pieces than the other.
+// `pieces` is how many each side starts with, filling from their own end.
+// The small boards get small armies: crowd them and the first player simply
+// runs out of squares and loses without a piece being taken. These numbers
+// come from playing each shape out (see the note in README).
+const SHAPES = {
+  full: { name: 'Classic', pieces: 12, fits: () => true },
+  x: { name: 'X', pieces: 6, fits: (r, c) => Math.abs(r - c) <= 1 || Math.abs(r + c - 7) <= 1 },
+  diamond: { name: 'Diamond', pieces: 6, fits: (r, c) => Math.abs(r - 3.5) + Math.abs(c - 3.5) <= 4.5 },
+  plus: { name: 'Plus', pieces: 8, fits: (r, c) => (r >= 2 && r <= 5) || (c >= 2 && c <= 5) },
+  hourglass: { name: 'Hourglass', pieces: 5, fits: (r, c) => Math.abs(c - 3.5) <= 3.5 - Math.abs(r - 3.5) * 0.6 },
+};
+const SHAPE_IDS = Object.keys(SHAPES);
+
+// Which squares exist, as an 8x8 grid of true/false.
+const shapeMask = (shape) => {
+  const fits = (SHAPES[shape] || SHAPES.full).fits;
+  return Array.from({ length: SIZE }, (_, r) =>
+    Array.from({ length: SIZE }, (_, c) => !!fits(r, c)));
+};
+
 const DIAGONALS = [[-1, -1], [-1, 1], [1, -1], [1, 1]];
 
 const inBounds = (r, c) => r >= 0 && r < SIZE && c >= 0 && c < SIZE;
@@ -54,15 +78,23 @@ class CheckersGame {
     this.reset();
   }
 
-  reset() {
+  reset(shape = 'full') {
+    this.shape = SHAPES[shape] ? shape : 'full';
+    this.mask = shapeMask(this.shape);
     this.board = Array.from({ length: SIZE }, () => Array(SIZE).fill(null));
-    let id = 0;
+    // Every square you can play on, from black's end to red's. Each side
+    // fills up from their own end, so the two armies mirror each other.
+    const squares = [];
     for (let r = 0; r < SIZE; r++) {
-      for (let c = 0; c < SIZE; c++) {
-        if (!isDark(r, c)) continue;
-        if (r < 3) this.board[r][c] = { id: id++, color: BLACK, king: false };
-        else if (r > 4) this.board[r][c] = { id: id++, color: RED, king: false };
-      }
+      for (let c = 0; c < SIZE; c++) if (isDark(r, c) && this.mask[r][c]) squares.push([r, c]);
+    }
+    const count = Math.min(SHAPES[this.shape].pieces, Math.floor(squares.length / 2));
+    let id = 0;
+    for (let i = 0; i < count; i++) {
+      const [br, bc] = squares[i];
+      const [rr, rc] = squares[squares.length - 1 - i];
+      this.board[br][bc] = { id: id++, color: BLACK, king: false };
+      this.board[rr][rc] = { id: id++, color: RED, king: false };
     }
     this.nextId = id;
     this.turn = RED;
@@ -82,6 +114,8 @@ class CheckersGame {
   clone() {
     const g = Object.create(CheckersGame.prototype);
     g.rng = this.rng;
+    g.shape = this.shape;
+    g.mask = this.mask; // never changes during a game, so it can be shared
     g.board = this.board.map((row) => row.map((p) => p && { ...p }));
     g.nextId = this.nextId;
     g.turn = this.turn;
@@ -103,6 +137,7 @@ class CheckersGame {
   // another device and loaded with restore().
   snapshot() {
     return JSON.parse(JSON.stringify({
+      shape: this.shape,
       board: this.board,
       nextId: this.nextId,
       turn: this.turn,
@@ -122,6 +157,8 @@ class CheckersGame {
 
   restore(state) {
     Object.assign(this, JSON.parse(JSON.stringify(state)));
+    this.shape = SHAPES[this.shape] ? this.shape : 'full';
+    this.mask = shapeMask(this.shape); // derived, so it isn't sent
   }
 
   // The game has ended, with a winner or a draw.
@@ -138,8 +175,13 @@ class CheckersGame {
     }
   }
 
+  // Is there a square there at all? Shapes other than Classic have gaps.
+  onBoard(r, c) {
+    return inBounds(r, c) && this.mask[r][c];
+  }
+
   isEmpty(r, c) {
-    return inBounds(r, c) && !this.board[r][c];
+    return this.onBoard(r, c) && !this.board[r][c];
   }
 
   directions(piece) {
@@ -161,7 +203,7 @@ class CheckersGame {
     for (const [dr, dc] of this.directions(piece)) {
       const r1 = r + dr;
       const c1 = c + dc;
-      if (!inBounds(r1, c1)) continue;
+      if (!this.onBoard(r1, c1)) continue;
       const neighbor = this.board[r1][c1];
       if (!neighbor) {
         steps.push({ from: [r, c], to: [r1, c1], capture: null });
@@ -399,7 +441,7 @@ class CheckersGame {
             // where it would be crowned.
             if (!own && !p.shield) {
               for (const [dr, dc] of DIAGONALS) {
-                const pusher = inBounds(r - dr, c - dc) && this.board[r - dr][c - dc];
+                const pusher = this.onBoard(r - dr, c - dc) && this.board[r - dr][c - dc];
                 if (!pusher || pusher.color !== color) continue;
                 if (!this.isEmpty(r + dr, c + dc)) continue;
                 if (!p.king && r + dr === kingRow(enemy)) continue;
@@ -538,6 +580,7 @@ class CheckersGame {
 if (typeof module !== 'undefined') {
   module.exports = {
     CheckersGame, SIZE, RED, BLACK, ABILITIES, ABILITY_IDS, REWARD_TRACK,
-    TIER_LIMITS, COMEBACK_EVERY, DRAW_AFTER, isDark, opponent, rewardTier,
+    TIER_LIMITS, COMEBACK_EVERY, DRAW_AFTER, SHAPES, SHAPE_IDS, shapeMask,
+    isDark, opponent, rewardTier,
   };
 }
