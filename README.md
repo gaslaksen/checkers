@@ -14,8 +14,9 @@ Checkers where jumping pieces earns you abilities.
   other, so there's no server and nothing to install. Quick emoji reactions
   included.
 
-**How to Play** on the menu explains the rules and every ability. The game
-installs to a phone home screen and works offline against the bot.
+**How to Play** on the menu explains the rules and every ability, and
+**Settings** turns the sound on or off. The game installs to a phone home
+screen and works offline against the bot.
 
 ## Rules
 
@@ -55,15 +56,34 @@ A game is a draw after 40 moves each with no capture, no new king and no Revive.
 
 ## Files
 
-Plain HTML, CSS and JavaScript — no build step. Open `index.html` to play
-locally (online play needs the https address above).
+Plain HTML, CSS and JavaScript — no build step for the website. Open
+`index.html` to play locally (online play needs the https address above).
 
 - `game.js` — the rules, with no reference to the page
 - `bot.js` — the computer opponent
 - `net.js` — online play
 - `main.js` — screens, board and input
 - `sound.js` — sound effects, synthesized in code
+- `store.js` — settings and results remembered between visits
+- `platform.js` — whether it's running in the iPhone app, and haptics there
+- `ads.js` — when the app may show an ad (the website never does)
+- `vendor/peerjs.min.js` — PeerJS 1.5.5, served from here rather than a CDN
 - `sw.js`, `manifest.json` — offline support and home-screen install
+
+## iPhone app
+
+The same files, bundled with [Capacitor](https://capacitorjs.com) into
+`ios/`. Building it needs Node and Xcode.
+
+```
+npm install
+npm run ios
+```
+
+That copies `index.html` and everything it links to into `www/`, syncs it
+into the Xcode project and opens Xcode, where you pick a simulator or phone
+and press Run. Run `npm run build` and `npx cap sync ios` after changing any
+web file. `scripts/draw-icons.html` draws the app icon and launch image.
 
 ## Tests
 
@@ -72,6 +92,7 @@ node tests/run.js
 ```
 
 No dependencies — they run the rules engine and the bot directly and take
-about ten seconds. They cover the checkers rules, every ability, earning and
-choosing rewards, the draw rule, the state copy that online play relies on,
-and that the three bot difficulties stay in order.
+about ten seconds. They cover the checkers rules, every ability, earning,
+choosing and rerolling rewards, the draw rule, the state copy that online
+play relies on, that the three bot difficulties stay in order, saving
+settings, and how often ads may show.
