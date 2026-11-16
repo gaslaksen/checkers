@@ -54,6 +54,15 @@
   };
   const TIER_NAME = { common: 'Common', rare: 'Rare', epic: 'Epic' };
 
+  // Inside the app: draw under the notch and home bar (the CSS keeps clear
+  // of them), and drop the web page habits of zooming in. Pinch-zoom is
+  // off in the app's settings too; this covers the page's side of it.
+  if (IS_APP) {
+    document.documentElement.classList.add('app');
+    document.querySelector('meta[name="viewport"]').content +=
+      ', viewport-fit=cover, maximum-scale=1, user-scalable=no';
+  }
+
   const game = new CheckersGame();
 
   const menuEl = document.getElementById('menu');
@@ -615,7 +624,7 @@
       render();
       if (msg.action) abilityEffect(msg.action);
       // Your own sounds already played here when you made the move.
-      if (msg.by !== myColor) for (const name of msg.sounds || []) Sound.play(name);
+      if (msg.by !== myColor) for (const name of msg.sounds || []) feedback(name);
       for (const event of msg.events || []) toast(event.text, event.tier);
       if (game.over) showResultSoon();
     }
@@ -760,8 +769,8 @@
     if (isGuest()) {
       Net.send({ type: 'intent', kind: 'move', from: move.from, to: move.to });
       const piece = game.board[move.from[0]][move.from[1]];
-      Sound.play(move.capture ? 'capture' : 'move');
-      if (piece && !piece.king && move.to[0] === (myColor === RED ? 0 : SIZE - 1)) Sound.play('crown');
+      feedback(move.capture ? 'capture' : 'move');
+      if (piece && !piece.king && move.to[0] === (myColor === RED ? 0 : SIZE - 1)) feedback('crown');
       pendingIntent = true;
       render();
       return;
@@ -1916,10 +1925,18 @@
 
   // ---------- Effects ----------
 
-  // Plays a sound, and remembers it for the other device when hosting online.
+  // Plays a sound (and, in the app, the buzz that goes with it), and
+  // remembers it for the other device when hosting online.
   function sfx(name) {
     if (soundBuffer) soundBuffer.push(name);
     Sound.play(name);
+    Haptics.feel(name);
+  }
+
+  // The same, without passing it on: for what the other device already knows.
+  function feedback(name) {
+    Sound.play(name);
+    Haptics.feel(name);
   }
 
   // Messages appear in both players' panels rather than over the board, so
