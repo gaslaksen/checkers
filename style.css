@@ -830,7 +830,9 @@ button {
   gap: 8px;
 }
 
-.guide-list.plain li { color: var(--muted); }
+/* Plain sentences, not icon-and-text rows: as flex items, anything inside a
+   sentence (the smiley) split it into columns that wrapped separately. */
+.guide-list.plain li { display: block; color: var(--muted); }
 
 .guide-list li {
   display: flex;
