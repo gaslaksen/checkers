@@ -1,0 +1,13 @@
+{
+  "name": "super-checkers",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Checkers where jumping pieces earns you abilities.",
+  "scripts": {
+    "test": "node tests/run.js",
+    "vendor": "cp node_modules/peerjs/dist/peerjs.min.js vendor/"
+  },
+  "dependencies": {
+    "peerjs": "1.5.5"
+  }
+}
