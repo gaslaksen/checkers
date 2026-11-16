@@ -1279,6 +1279,8 @@
       sub = piecesLeft ? `${label(loser)} has no moves left.` : `Every ${label(loser)} piece was captured.`;
     }
 
+    recordGame(lost);
+
     const colors = game.drawn ? [RED, BLACK] : [winner];
     document.getElementById('result-tokens').innerHTML = colors
       .map((c) => `<div class="token ${c} king"><div class="disc">${CROWN_SVG}</div></div>`)
@@ -1292,6 +1294,15 @@
 
     if (!lost && !game.drawn) launchConfetti();
     document.getElementById('play-again').focus();
+  }
+
+  // Each finished game counts once, however many times its result is shown.
+  let recordedSession = null;
+  function recordGame(lost) {
+    if (recordedSession === session) return;
+    recordedSession = session;
+    Store.countGame();
+    if (mode === 'bot') Store.recordBotGame(botLevel, game.drawn ? 'draw' : lost ? 'loss' : 'win');
   }
 
   function hideResult() {
