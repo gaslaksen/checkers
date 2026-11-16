@@ -36,10 +36,31 @@
         How to Play
         <small>Rules and abilities</small>
       </button>
+      <button id="open-settings" type="button" class="menu-btn">
+        Settings
+        <small>Sound on or off</small>
+      </button>
       <button id="install-app" type="button" class="menu-btn" hidden>
         Install
         <small>Add it to your home screen</small>
       </button>
+    </div>
+    <div id="menu-settings" class="menu-buttons" hidden>
+      <p class="menu-label">Settings</p>
+      <button id="toggle-sound" type="button" class="menu-btn setting-btn" role="switch" aria-checked="true">
+        <span>Sound</span>
+        <span class="switch" aria-hidden="true"></span>
+      </button>
+      <button id="remove-ads" type="button" class="menu-btn" hidden>
+        Remove Ads
+        <small>No more ads between games</small>
+      </button>
+      <button id="restore-purchases" type="button" class="menu-btn" hidden>
+        Restore Purchases
+        <small>Bought it before? Get it back here</small>
+      </button>
+      <a id="privacy-policy" class="menu-back" href="#" target="_blank" rel="noopener" hidden>Privacy Policy</a>
+      <button type="button" class="menu-back" data-back="main">Back</button>
     </div>
     <div id="menu-multiplayer" class="menu-buttons" hidden>
       <p class="menu-label">Multiplayer</p>
