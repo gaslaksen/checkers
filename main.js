@@ -1319,9 +1319,10 @@
   let installPrompt = null;
 
   // Chrome and friends offer this; iOS doesn't, so there the guide explains
-  // the Share → Add to Home Screen route instead.
+  // the Share → Add to Home Screen route instead. The app is already installed.
   window.addEventListener('beforeinstallprompt', (e) => {
     e.preventDefault();
+    if (IS_APP) return;
     installPrompt = e;
     installBtn.hidden = false;
   });
@@ -1339,7 +1340,8 @@
     installBtn.hidden = true;
   });
 
-  if ('serviceWorker' in navigator) {
+  // The app carries its own copy of every file, so it has no use for one.
+  if ('serviceWorker' in navigator && !IS_APP) {
     window.addEventListener('load', () => {
       navigator.serviceWorker.register('sw.js').catch(() => {
         // Offline play just won't be available; the game still works.
@@ -1612,8 +1614,9 @@
     `It's a draw after 40 moves each with no capture and no new king.`,
     `You can send an emote too — tap the <span class="guide-smiley" role="img" aria-label="smiley face">🙂</span> at the top of the screen.`,
     'Playing online: one of you creates a game and shares the code, the other taps Join Game and types it in — like RNDY.',
-    'To keep it on your phone: Android — Install from the menu; iPhone — Share, then Add to Home Screen.',
-  ];
+    // Only the website needs telling how to stay on your phone.
+    !IS_APP && 'To keep it on your phone: Android — Install from the menu; iPhone — Share, then Add to Home Screen.',
+  ].filter(Boolean);
 
   function showGuide() {
     const rows = ['common', 'rare', 'epic'].map((tier) => {
