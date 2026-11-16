@@ -64,6 +64,7 @@
     shape: document.getElementById('menu-shape'),
     glitch: document.getElementById('menu-glitch'),
     tooeasy: document.getElementById('menu-tooeasy'),
+    settings: document.getElementById('menu-settings'),
     multiplayer: document.getElementById('menu-multiplayer'),
     online: document.getElementById('menu-online'),
     create: document.getElementById('menu-create'),
@@ -221,6 +222,7 @@
 
   document.getElementById('play-bot').addEventListener('click', () => showMenuPage('difficulty'));
   document.getElementById('how-to-play').addEventListener('click', showGuide);
+  document.getElementById('open-settings').addEventListener('click', showSettings);
   document.getElementById('play-tooeasy').addEventListener('click', () => {
     screenFlash('tint-gold');
     startGame('bot', 'tooeasy');
@@ -300,7 +302,7 @@
     if (menuPages.main.hidden && menuPages.difficulty.hidden) return;
     shapesOn = !shapesOn;
     knockTokens();
-    // Both lists turn upside down: hardest first, How to Play first.
+    // Both lists turn upside down: hardest first, Settings first.
     menuEl.classList.toggle('shapes-on', shapesOn);
   });
 
@@ -1323,6 +1325,46 @@
       el.appendChild(bit);
     }
   }
+
+  // ---------- Settings ----------
+
+  // Not ready yet, so not shown: a privacy policy page to link to, and
+  // something to buy. Purchases will only ever be offered in the app.
+  const PRIVACY_URL = null;
+  const PURCHASES_READY = false;
+
+  const soundToggle = document.getElementById('toggle-sound');
+
+  function showSettings() {
+    renderSettings();
+    showMenuPage('settings');
+  }
+
+  function renderSettings() {
+    const on = Store.get('sound');
+    soundToggle.setAttribute('aria-checked', String(on));
+    const shop = IS_APP && PURCHASES_READY;
+    document.getElementById('remove-ads').hidden = !shop || Store.get('removeAds');
+    document.getElementById('restore-purchases').hidden = !shop;
+    const privacy = document.getElementById('privacy-policy');
+    privacy.hidden = !PRIVACY_URL;
+    if (PRIVACY_URL) privacy.href = PRIVACY_URL;
+  }
+
+  // Turning it on, you hear the tap that did it; turning it off, you don't.
+  soundToggle.addEventListener('click', () => {
+    const on = !Store.get('sound');
+    Store.set('sound', on);
+    Sound.setEnabled(on);
+    renderSettings();
+  });
+
+  Sound.setEnabled(Store.get('sound'));
+  // The app's saved settings arrive a moment after it opens.
+  Store.ready.then(() => {
+    Sound.setEnabled(Store.get('sound'));
+    renderSettings();
+  });
 
   // ---------- Installing to the home screen ----------
 

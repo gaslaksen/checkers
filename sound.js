@@ -6,6 +6,7 @@ const Sound = (() => {
   const VOLUME = 0.5;
 
   let ctx = null;
+  let enabled = true; // the Sound setting
 
   // Browsers only allow audio after the player interacts with the page, so the
   // audio context is created on the first sound and resumed if it was paused.
@@ -246,6 +247,7 @@ const Sound = (() => {
       sound(target, 0);
       return;
     }
+    if (!enabled) return;
     const c = context();
     if (!c) return;
     try {
@@ -263,7 +265,10 @@ const Sound = (() => {
     if (ctx.state === 'suspended') ctx.resume().catch(() => {});
   }
 
-  return { play, resume, names: Object.keys(SOUNDS) };
+  // Switched off in Settings, nothing plays at all.
+  const setEnabled = (on) => { enabled = !!on; };
+
+  return { play, resume, setEnabled, names: Object.keys(SOUNDS) };
 })();
 
 if (typeof module !== 'undefined') module.exports = { Sound };
