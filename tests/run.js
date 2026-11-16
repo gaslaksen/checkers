@@ -7,19 +7,23 @@ const files = fs.readdirSync(__dirname).filter((f) => f.endsWith('.test.js')).so
 let failed = 0;
 let passed = 0;
 
-for (const file of files) {
-  const tests = require(path.join(__dirname, file));
-  for (const [name, fn] of Object.entries(tests)) {
-    try {
-      fn();
-      passed++;
-    } catch (error) {
-      failed++;
-      console.error(`FAIL  ${file} — ${name}`);
-      console.error(`      ${error.message.split('\n')[0]}`);
+// A test can be async: it passes when its promise resolves.
+async function runAll() {
+  for (const file of files) {
+    const tests = require(path.join(__dirname, file));
+    for (const [name, fn] of Object.entries(tests)) {
+      try {
+        await fn();
+        passed++;
+      } catch (error) {
+        failed++;
+        console.error(`FAIL  ${file} — ${name}`);
+        console.error(`      ${error.message.split('\n')[0]}`);
+      }
     }
   }
+  console.log(`${passed} passed, ${failed} failed`);
+  process.exit(failed ? 1 : 0);
 }
 
-console.log(`${passed} passed, ${failed} failed`);
-process.exit(failed ? 1 : 0);
+runAll();

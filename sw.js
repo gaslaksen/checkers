@@ -10,6 +10,7 @@ const FILES = [
   'bot.js',
   'net.js',
   'platform.js',
+  'store.js',
   'sound.js',
   'main.js',
   'vendor/peerjs.min.js',
