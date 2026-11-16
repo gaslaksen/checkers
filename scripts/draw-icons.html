@@ -1,0 +1,168 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Super Checkers icons</title>
+  <style>
+    body { margin: 24px; background: #888; font-family: system-ui, sans-serif; }
+    figure { display: inline-block; margin: 0 24px 24px 0; vertical-align: top; }
+    canvas { display: block; width: 256px; height: auto; }
+    figcaption a { color: #000; }
+  </style>
+</head>
+<body>
+  <!--
+    The app's icon and launch image, drawn in code like the game's own pieces
+    so they always match. Open this file in a browser (from a local server,
+    e.g. the project's preview) and use the links to save each PNG, then put
+    them where the captions say.
+  -->
+  <script>
+    const COLORS = {
+      bg: '#1c1d21', bgGlow: '#26282e',
+      red: '#cf3a2e', redHi: '#f0715f', redLo: '#8a1d16',
+      black: '#34343a', blackHi: '#6a6a73', blackLo: '#111114',
+      gold: '#f4cf5e', titleTop: '#fff6e6', titleBottom: '#e5cfa6', muted: '#a39e94',
+    };
+    // The crown from index.html, on its 24×24 grid.
+    const CROWN = new Path2D('M3 18.5h18L19.6 8l-4.6 4.2L12 5l-3 7.2L4.4 8z');
+
+    // One checker, `d` across, centred on (x, y). Mirrors .disc in style.css.
+    function checker(ctx, x, y, d, color, { king = false, shadow = true } = {}) {
+      const [hi, mid, lo] = color === 'red'
+        ? [COLORS.redHi, COLORS.red, COLORS.redLo]
+        : [COLORS.blackHi, COLORS.black, COLORS.blackLo];
+      const r = d / 2;
+      if (shadow) {
+        ctx.save();
+        ctx.shadowColor = 'rgba(0, 0, 0, 0.4)';
+        ctx.shadowBlur = d * 0.17;
+        ctx.shadowOffsetY = d * 0.1;
+        ctx.fillStyle = color === 'red' ? lo : '#000';
+        ctx.beginPath();
+        ctx.arc(x, y + d * 0.068, r, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.restore();
+      }
+      // radial-gradient(circle at 35% 30%, hi, mid 55%, lo), sized to the far corner
+      const gx = x - r + d * 0.35;
+      const gy = y - r + d * 0.3;
+      const fill = ctx.createRadialGradient(gx, gy, 0, gx, gy, d * Math.hypot(0.65, 0.7));
+      fill.addColorStop(0, hi);
+      fill.addColorStop(0.55, mid);
+      fill.addColorStop(1, lo);
+      ctx.fillStyle = fill;
+      ctx.beginPath();
+      ctx.arc(x, y, r, 0, Math.PI * 2);
+      ctx.fill();
+      // The inner ring
+      ctx.strokeStyle = 'rgba(255, 255, 255, 0.16)';
+      ctx.lineWidth = d * 0.025;
+      ctx.beginPath();
+      ctx.arc(x, y, r - d * 0.16, 0, Math.PI * 2);
+      ctx.stroke();
+      if (king) {
+        const s = (d * 0.52) / 24;
+        ctx.save();
+        ctx.translate(x - 12 * s, y - 12 * s);
+        ctx.scale(s, s);
+        ctx.fillStyle = COLORS.gold;
+        ctx.fill(CROWN);
+        ctx.strokeStyle = 'rgba(0, 0, 0, 0.45)';
+        ctx.lineWidth = 1;
+        ctx.lineJoin = 'round';
+        ctx.stroke(CROWN);
+        ctx.restore();
+      }
+    }
+
+    // The app icon: a red king on the game's background. Square and fully
+    // opaque, as the App Store requires; iOS rounds the corners itself.
+    function drawIcon(canvas) {
+      const n = canvas.width;
+      const ctx = canvas.getContext('2d');
+      ctx.fillStyle = COLORS.bg;
+      ctx.fillRect(0, 0, n, n);
+      const glow = ctx.createRadialGradient(n / 2, n * 0.3, 0, n / 2, n * 0.3, n * 0.8);
+      glow.addColorStop(0, COLORS.bgGlow);
+      glow.addColorStop(1, COLORS.bg);
+      ctx.fillStyle = glow;
+      ctx.fillRect(0, 0, n, n);
+      checker(ctx, n / 2, n * 0.48, n * 0.76, 'red', { king: true });
+    }
+
+    // The launch image: the top of the main menu — the two checkers and the
+    // title — on the menu's background, so opening the app runs straight
+    // into the menu. It's shown scaled to fill the screen, so everything
+    // stays near the middle.
+    function drawSplash(canvas) {
+      const n = canvas.width;
+      const k = n / 910; // the menu, about three times its size on a phone
+      const ctx = canvas.getContext('2d');
+      ctx.fillStyle = COLORS.bg;
+      ctx.fillRect(0, 0, n, n);
+      const glow = ctx.createRadialGradient(n / 2, n * 0.45, 0, n / 2, n * 0.45, n * 0.35);
+      glow.addColorStop(0, COLORS.bgGlow);
+      glow.addColorStop(1, COLORS.bg);
+      ctx.fillStyle = glow;
+      ctx.fillRect(0, 0, n, n);
+
+      const top = n / 2 - 70 * k;
+      const d = 59 * k; // a 76px token's disc
+      const tilted = (x, y, deg, draw) => {
+        ctx.save();
+        ctx.translate(x, y);
+        ctx.rotate((deg * Math.PI) / 180);
+        draw();
+        ctx.restore();
+      };
+      tilted(n / 2 - 28 * k, top, -8, () => checker(ctx, 0, 0, d, 'black'));
+      tilted(n / 2 + 28 * k, top - 6 * k, 8, () => checker(ctx, 0, 0, d, 'red', { king: true }));
+
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'alphabetic';
+      ctx.fillStyle = COLORS.gold;
+      ctx.font = `700 ${24 * k}px system-ui, -apple-system, sans-serif`;
+      ctx.letterSpacing = `${12 * k}px`;
+      ctx.fillText('SUPER', n / 2 + 6 * k, top + 80 * k);
+
+      ctx.letterSpacing = `${-1.7 * k}px`;
+      ctx.font = `900 ${88 * k}px system-ui, -apple-system, sans-serif`;
+      const baseline = top + 160 * k;
+      ctx.save();
+      ctx.fillStyle = COLORS.redLo; // the title's drop shadow
+      ctx.fillText('Checkers', n / 2, baseline + 4 * k);
+      ctx.restore();
+      const face = ctx.createLinearGradient(0, baseline - 66 * k, 0, baseline);
+      face.addColorStop(0, COLORS.titleTop);
+      face.addColorStop(1, COLORS.titleBottom);
+      ctx.fillStyle = face;
+      ctx.fillText('Checkers', n / 2, baseline);
+    }
+
+    const OUTPUTS = [
+      { name: 'AppIcon-1024.png', size: 1024, draw: drawIcon,
+        where: 'ios/App/App/Assets.xcassets/AppIcon.appiconset/' },
+      { name: 'splash-2732x2732.png', size: 2732, draw: drawSplash,
+        where: 'ios/App/App/Assets.xcassets/Splash.imageset/' },
+    ];
+
+    const canvases = {};
+    for (const out of OUTPUTS) {
+      const canvas = document.createElement('canvas');
+      canvas.width = canvas.height = out.size;
+      out.draw(canvas);
+      canvases[out.name] = canvas;
+      const figure = document.createElement('figure');
+      const caption = document.createElement('figcaption');
+      const link = document.createElement('a');
+      link.textContent = `${out.name} (${out.size}×${out.size})`;
+      link.download = out.name;
+      link.href = canvas.toDataURL('image/png');
+      caption.append(link, ` → ${out.where}`);
+      figure.append(canvas, caption);
+      document.body.append(figure);
+    }
+  </script>
+</body>
+</html>
