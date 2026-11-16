@@ -2,7 +2,18 @@
 
 const assert = require('assert');
 const { engine, RED, BLACK, CheckersGame, emptyGame, put } = require('./helpers');
-const { rewardTier, TIER_LIMITS } = engine;
+const { rewardTier, TIER_LIMITS, ABILITIES, ABILITY_IDS } = engine;
+
+// A game where red has an offer of `tier` waiting, with these two options.
+function offerOf(tier, options) {
+  const game = emptyGame();
+  put(game, 5, 2, RED);
+  put(game, 0, 7, BLACK);
+  game.pending[RED].push({ color: RED, tier, options: [...options] });
+  return game;
+}
+
+const sameSet = (a, b) => [...a].sort().join() === [...b].sort().join();
 
 // Red jumps one black piece; returns the game and what the move reported.
 function oneJump(setUp = () => {}) {
@@ -109,5 +120,79 @@ module.exports = {
     const clone = game.clone();
     clone.chooseReward(RED, clone.pendingReward(RED).options[0]);
     assert.strictEqual(game.pending[RED].length, 1, 'the original is untouched');
+  },
+
+  'a Rare reroll offers the other two Rare abilities'() {
+    for (let i = 0; i < 10; i++) {
+      const game = offerOf('rare', ['shield', 'freeze']);
+      const offer = game.rerollReward(RED);
+      assert(sameSet(offer.options, ['push', 'swap']), offer.options.join());
+      assert.strictEqual(offer.tier, 'rare');
+      assert.strictEqual(game.pendingReward(RED), offer);
+    }
+  },
+
+  'a Common reroll offers a different pair, with one new ability'() {
+    const seen = new Set();
+    for (let i = 0; i < 30; i++) {
+      const game = offerOf('common', ['sidestep', 'retreat']);
+      const { options } = game.rerollReward(RED);
+      assert.strictEqual(options.length, 2);
+      assert.notStrictEqual(options[0], options[1]);
+      assert(options.every((id) => ABILITIES[id].tier === 'common'));
+      assert(options.includes('extraStep'), 'the one it was missing');
+      assert(!sameSet(options, ['sidestep', 'retreat']));
+      seen.add([...options].sort().join());
+    }
+    assert.strictEqual(seen.size, 2, 'either old one can stay');
+  },
+
+  'each offer can be rerolled once'() {
+    const game = offerOf('rare', ['shield', 'freeze']);
+    assert(game.canReroll(RED));
+    assert(game.rerollReward(RED));
+    assert(!game.canReroll(RED));
+    assert.strictEqual(game.rerollReward(RED), null);
+  },
+
+  'an Epic offer cannot be rerolled: there are only two Epics'() {
+    const epics = ABILITY_IDS.filter((id) => ABILITIES[id].tier === 'epic');
+    const game = offerOf('epic', epics);
+    assert(!game.canReroll(RED));
+    assert.strictEqual(game.rerollReward(RED), null);
+    assert.deepStrictEqual(game.pendingReward(RED).options, epics, 'the offer is untouched');
+  },
+
+  'nothing to reroll without an offer, or for the other player'() {
+    const game = offerOf('rare', ['shield', 'freeze']);
+    assert.strictEqual(game.rerollReward(BLACK), null);
+    game.chooseReward(RED, null);
+    assert.strictEqual(game.rerollReward(RED), null);
+  },
+
+  'after a reroll you choose from the new pair, not the old one'() {
+    const game = offerOf('rare', ['shield', 'freeze']);
+    game.rerollReward(RED);
+    assert.strictEqual(game.chooseReward(RED, 'shield'), null);
+    assert.strictEqual(game.chooseReward(RED, 'push').ability, 'push');
+    assert.strictEqual(game.inventory[RED].push, 1);
+  },
+
+  'only the first waiting offer is rerolled'() {
+    const game = offerOf('rare', ['shield', 'freeze']);
+    game.pending[RED].push({ color: RED, tier: 'common', options: ['sidestep', 'retreat'] });
+    game.rerollReward(RED);
+    assert.deepStrictEqual(game.pending[RED][1].options, ['sidestep', 'retreat']);
+  },
+
+  'a rerolled offer stays rerolled in copies, and clones are independent'() {
+    const game = offerOf('rare', ['shield', 'freeze']);
+    const clone = game.clone();
+    game.rerollReward(RED);
+    assert.deepStrictEqual(clone.pendingReward(RED).options, ['shield', 'freeze']);
+    assert(clone.canReroll(RED));
+    const copy = new CheckersGame();
+    copy.restore(JSON.parse(JSON.stringify(game.snapshot())));
+    assert(!copy.canReroll(RED));
   },
 };

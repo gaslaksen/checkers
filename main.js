@@ -279,8 +279,8 @@
   document.getElementById('confirm-no').addEventListener('click', () => {
     confirmEl.hidden = true;
   });
-  document.getElementById('play-again').addEventListener('click', playAgain);
-  document.getElementById('result-menu').addEventListener('click', showMenu);
+  document.getElementById('play-again').addEventListener('click', () => leaveFinishedGame(playAgain));
+  document.getElementById('result-menu').addEventListener('click', () => leaveFinishedGame(showMenu));
   document.getElementById('view-board').addEventListener('click', hideResult);
   for (const btn of menuDifficultyEl.querySelectorAll('[data-level]')) {
     btn.addEventListener('click', () => {
@@ -429,7 +429,11 @@
 
   // Tapping Menu mid-game asks first, so a stray tap doesn't end the game.
   function askLeaveGame() {
-    if (game.over || connectionLost) {
+    if (game.over) {
+      leaveFinishedGame(showMenu);
+      return;
+    }
+    if (connectionLost) {
       showMenu();
       return;
     }
@@ -438,6 +442,29 @@
       : 'This game will be lost.';
     confirmEl.hidden = false;
     document.getElementById('confirm-no').focus();
+  }
+
+  // Leaving a finished game is the one moment an ad may come between games
+  // (the app decides whether one's due; the website never has any). Online,
+  // the friend isn't kept waiting: Menu tells them first, and Play again
+  // skips the ad entirely.
+  let leaving = false;
+  async function leaveFinishedGame(next) {
+    if (leaving) return;
+    leaving = true;
+    try {
+      if (mode !== 'online') {
+        await Ads.betweenGames();
+        next();
+      } else if (next === showMenu) {
+        next();
+        await Ads.betweenGames();
+      } else {
+        next();
+      }
+    } finally {
+      leaving = false;
+    }
   }
 
   function showMenu() {
@@ -1524,6 +1551,7 @@
   let rewardTimer = null;
 
   document.getElementById('reward-skip').addEventListener('click', () => sendReward(null));
+  document.getElementById('reward-reroll').addEventListener('click', rerollReward);
   document.getElementById('reward-options').addEventListener('click', (e) => {
     const btn = e.target.closest('[data-ability]');
     if (btn) pickReward(btn.dataset.ability);
@@ -1561,6 +1589,8 @@
     rewardEl.hidden = true;
   }
 
+  const rewardKeyFor = (color, offer) => `${color}:${offer.tier}:${offer.options.join(',')}`;
+
   function maybeShowReward() {
     const color = rewardChooser();
     const offer = color && game.pendingReward(color);
@@ -1570,7 +1600,7 @@
     }
     // Already showing this same offer? Leave it alone — rebuilding would
     // undo a half-made choice when the other player's move arrives.
-    const key = `${color}:${offer.tier}:${offer.options.join(',')}`;
+    const key = rewardKeyFor(color, offer);
     if (!rewardEl.hidden && rewardKey === key) return;
     // A new offer waits a second, then renders again and falls through here.
     if (rewardWaitKey !== key) {
@@ -1592,8 +1622,10 @@
     document.getElementById('reward-sub').textContent = full
       ? `Your ${TIER_NAME[offer.tier]} slots are full — take one of these in place of one you hold, or keep what you have.`
       : `You earned ${offer.tier === 'epic' ? 'an' : 'a'} ${TIER_NAME[offer.tier]} ability. Pick one.`;
+    document.getElementById('reward-options').classList.remove('rerolled');
     document.getElementById('reward-options').innerHTML = offer.options.map(optionButton).join('');
     document.getElementById('reward-swap').hidden = true;
+    rerollBtn.hidden = !canReroll(color);
     document.getElementById('reward-skip').textContent = full ? 'Keep what I have' : 'No thanks';
     rewardEl.hidden = false;
   }
@@ -1607,9 +1639,36 @@
     }
     // That tier is full, so something has to go.
     rewardPick = ability;
+    rerollBtn.hidden = true;
     const held = ABILITY_IDS.filter((id) => tierOf(id) === offer.tier && game.inventory[offer.color][id] > 0);
     document.getElementById('reward-held').innerHTML = held.map(optionButton).join('');
     document.getElementById('reward-swap').hidden = false;
+  }
+
+  // A rewarded ad buys a different pair to choose from. Against the bot or on
+  // one device only: online, an ad must never buy an edge over a friend.
+  const rerollBtn = document.getElementById('reward-reroll');
+
+  const canReroll = (color) => mode !== 'online' && game.canReroll(color) && Ads.available('rewarded');
+
+  async function rerollReward() {
+    const color = rewardColor;
+    const mySession = session;
+    rerollBtn.disabled = true;
+    const watched = await Ads.rewarded('reroll');
+    rerollBtn.disabled = false;
+    if (!watched || mySession !== session || rewardColor !== color || rewardEl.hidden) return;
+    const offer = game.rerollReward(color);
+    if (!offer) return;
+    // Straight to the new pair, without the beat a new offer waits.
+    rewardWaitKey = rewardKeyFor(color, offer);
+    rewardKey = null;
+    maybeShowReward();
+    const options = document.getElementById('reward-options');
+    options.classList.remove('rerolled');
+    void options.offsetWidth; // restart the animation
+    options.classList.add('rerolled');
+    Sound.play(`reward${capitalize(offer.tier)}`);
   }
 
   function sendReward(ability, replace = null) {

@@ -942,6 +942,28 @@ a.menu-back {
 
 #reward-skip { margin-top: 16px; }
 
+.reroll-btn {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  margin: 14px auto 0;
+  padding: 10px 22px;
+  border-style: dashed;
+  border-radius: 12px;
+  font-weight: 700;
+}
+.reroll-btn small { font-size: 0.78rem; font-weight: 500; color: var(--muted); }
+.reroll-btn:disabled { opacity: 0.6; }
+
+/* The new pair turns over into place. */
+.reward-options.rerolled .reward-option { animation: reroll-in 320ms ease-out both; }
+.reward-options.rerolled .reward-option + .reward-option { animation-delay: 60ms; }
+
+@keyframes reroll-in {
+  from { opacity: 0; transform: rotateY(90deg); }
+}
+
 /* ---------- Quick reactions ---------- */
 
 /* Only worth showing when there's someone to react to */

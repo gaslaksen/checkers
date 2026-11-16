@@ -11,6 +11,7 @@ const FILES = [
   'net.js',
   'platform.js',
   'store.js',
+  'ads.js',
   'sound.js',
   'main.js',
   'vendor/peerjs.min.js',

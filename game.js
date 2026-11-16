@@ -351,6 +351,34 @@ class CheckersGame {
     return { color, tier: offer.tier, ability, replaced };
   }
 
+  // Whether `color` can trade the abilities on offer for others: once per
+  // offer, and only in a tier with more than the two already shown.
+  canReroll(color) {
+    const offer = this.pendingReward(color);
+    return !!offer && !offer.rerolled && POOLS[offer.tier].length > 2;
+  }
+
+  // Swap the two abilities on offer for two others of the same tier, as
+  // different from the old pair as the tier allows: Rare has four, so both
+  // are new; Common has three, so one of them is. Returns the new offer.
+  rerollReward(color) {
+    if (!this.canReroll(color)) return null;
+    const offer = this.pendingReward(color);
+    const pool = POOLS[offer.tier];
+    const pairs = [];
+    for (let i = 0; i < pool.length; i++) {
+      for (let j = i + 1; j < pool.length; j++) pairs.push([pool[i], pool[j]]);
+    }
+    const repeats = (pair) => pair.filter((id) => offer.options.includes(id)).length;
+    const fewest = Math.min(...pairs.map(repeats));
+    const fresh = pairs.filter((pair) => repeats(pair) === fewest);
+    const options = fresh[Math.floor(this.rng() * fresh.length)];
+    if (this.rng() < 0.5) options.reverse(); // either one can come first
+    const rerolled = { ...offer, options, rerolled: true };
+    this.pending[color][0] = rerolled;
+    return rerolled;
+  }
+
   // ---------- Abilities ----------
 
   // Every way the side to move can use `ability` right now. Each action has a
