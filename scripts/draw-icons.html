@@ -91,13 +91,13 @@
       checker(ctx, n / 2, n * 0.48, n * 0.76, 'red', { king: true });
     }
 
-    // The launch image: the top of the main menu — the two checkers and the
-    // title — on the menu's background, so opening the app runs straight
-    // into the menu. It's shown scaled to fill the screen, so everything
-    // stays near the middle.
-    function drawSplash(canvas) {
+    // The launch screen's picture: the top of the main menu — the two
+    // checkers and the title — so opening the app runs straight into the
+    // menu. The launch screen centres it on a plain background of the same
+    // colour, which its edges fade into.
+    function drawLaunchLogo(canvas) {
       const n = canvas.width;
-      const k = n / 910; // the menu, about three times its size on a phone
+      const k = n / 600; // menu pixels to image pixels
       const ctx = canvas.getContext('2d');
       ctx.fillStyle = COLORS.bg;
       ctx.fillRect(0, 0, n, n);
@@ -143,7 +143,8 @@
     const OUTPUTS = [
       { name: 'AppIcon-1024.png', size: 1024, draw: drawIcon,
         where: 'ios/App/App/Assets.xcassets/AppIcon.appiconset/' },
-      { name: 'splash-2732x2732.png', size: 2732, draw: drawSplash,
+      // Shown 400 points square, so 1200 pixels covers a 3× screen.
+      { name: 'launch-logo.png', size: 1200, draw: drawLaunchLogo,
         where: 'ios/App/App/Assets.xcassets/Splash.imageset/' },
     ];
 
