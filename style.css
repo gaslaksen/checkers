@@ -807,6 +807,9 @@ a.menu-back {
   transform: rotate(180deg);
 }
 
+/* Only red's side has a Menu button. */
+.game.hotseat #bar-top .to-menu { display: none; }
+
 /* Playing alone on this device (bot or online), one status bar is enough. */
 .game.solo-view #bar-bottom {
   display: none;
