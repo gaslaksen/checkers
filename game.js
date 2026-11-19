@@ -46,15 +46,28 @@ for (const id of ABILITY_IDS) (POOLS[ABILITIES[id].tier] ||= []).push(id);
 // from their own end. That number matters: crowd a small board and the
 // first player simply runs out of squares and loses without a piece being
 // taken. These come from playing each shape out.
+// Each outline, given a square and how many squares across the board is.
+const OUTLINES = {
+  x: (r, c, n) => Math.abs(r - c) <= 1 || Math.abs(r + c - (n - 1)) <= 1,
+  diamond: (r, c, n) => Math.abs(r - (n - 1) / 2) + Math.abs(c - (n - 1) / 2) <= n / 2 + 0.5,
+  plus: (r, c, n) => (r >= n / 4 && r <= n - 1 - n / 4) || (c >= n / 4 && c <= n - 1 - n / 4),
+  ellipse: (r, c, n) => Math.abs(c - (n - 1) / 2) <= (n - 1) / 2 - Math.abs(r - (n - 1) / 2) * 0.6,
+};
+
+// Classic is the ordinary game, and Big is the same at ten across. The
+// outlines come in both sizes, since the board chooser asks for the size
+// first and then lists what that size has.
 const SHAPES = {
   full: { name: 'Classic', size: 8, pieces: 12, fits: () => true },
-  x: { name: 'X', size: 8, pieces: 6, fits: (r, c, n) => Math.abs(r - c) <= 1 || Math.abs(r + c - (n - 1)) <= 1 },
-  diamond: { name: 'Diamond', size: 8, pieces: 6, fits: (r, c, n) => Math.abs(r - (n - 1) / 2) + Math.abs(c - (n - 1) / 2) <= n / 2 + 0.5 },
-  plus: { name: 'Plus', size: 8, pieces: 8, fits: (r, c, n) => (r >= n / 4 && r <= n - 1 - n / 4) || (c >= n / 4 && c <= n - 1 - n / 4) },
-  hourglass: { name: 'Hourglass', size: 8, pieces: 5, fits: (r, c, n) => Math.abs(c - (n - 1) / 2) <= (n - 1) / 2 - Math.abs(r - (n - 1) / 2) * 0.6 },
+  x: { name: 'X', size: 8, pieces: 6, fits: OUTLINES.x },
+  diamond: { name: 'Diamond', size: 8, pieces: 6, fits: OUTLINES.diamond },
+  plus: { name: 'Plus', size: 8, pieces: 8, fits: OUTLINES.plus },
+  ellipse: { name: 'Ellipse', size: 8, pieces: 5, fits: OUTLINES.ellipse },
   big: { name: 'Big', size: 10, pieces: 20, fits: () => true },
-  bighourglass: { name: 'Big Hourglass', size: 10, pieces: 10, fits: (r, c, n) => Math.abs(c - (n - 1) / 2) <= (n - 1) / 2 - Math.abs(r - (n - 1) / 2) * 0.6 },
-  bigx: { name: 'Big X', size: 10, pieces: 6, fits: (r, c, n) => Math.abs(r - c) <= 1 || Math.abs(r + c - (n - 1)) <= 1 },
+  bigx: { name: 'X', size: 10, pieces: 6, fits: OUTLINES.x },
+  bigdiamond: { name: 'Diamond', size: 10, pieces: 11, fits: OUTLINES.diamond },
+  bigplus: { name: 'Plus', size: 10, pieces: 9, fits: OUTLINES.plus },
+  bigellipse: { name: 'Ellipse', size: 10, pieces: 10, fits: OUTLINES.ellipse },
 };
 const SHAPE_IDS = Object.keys(SHAPES);
 

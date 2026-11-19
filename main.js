@@ -70,6 +70,7 @@
   const menuPages = {
     main: document.getElementById('menu-main'),
     difficulty: document.getElementById('menu-difficulty'),
+    size: document.getElementById('menu-size'),
     shape: document.getElementById('menu-shape'),
     glitch: document.getElementById('menu-glitch'),
     tooeasy: document.getElementById('menu-tooeasy'),
@@ -340,30 +341,51 @@
     }, 190);
   }
 
-  // Ask which board, then do whatever was waiting on the answer.
+  // Ask which board — the size, then the shape — and then do whatever was
+  // waiting on the answer.
   function chooseBoard(backTo, start) {
     afterShape = start;
-    menuPages.shape.querySelector('[data-back]').dataset.back = backTo;
-    showShapeMenu();
+    menuPages.size.querySelector('[data-back]').dataset.back = backTo;
+    showSizeMenu();
   }
 
-  function showShapeMenu() {
-    document.getElementById('shape-list').innerHTML = SHAPE_IDS.map((id) => {
-      const mask = shapeMask(id);
-      const n = SHAPES[id].size;
-      const cells = [];
-      for (let r = 0; r < n; r++) {
-        for (let c = 0; c < n; c++) {
-          cells.push(`<span class="${!mask[r][c] ? 'off' : isDark(r, c) ? 'dark' : 'light'}"></span>`);
-        }
+  const BOARD_SIZES = [{ name: 'Normal', size: 8 }, { name: 'Big', size: 10 }];
+
+  // A little picture of a board: its squares, with gaps where it has none.
+  function boardPicture(n, mask = null) {
+    const cells = [];
+    for (let r = 0; r < n; r++) {
+      for (let c = 0; c < n; c++) {
+        cells.push(`<span class="${mask && !mask[r][c] ? 'off' : isDark(r, c) ? 'dark' : 'light'}"></span>`);
       }
-      return `<button type="button" class="shape-btn" data-shape="${id}">
-        <span class="shape-grid" style="--n: ${n}" aria-hidden="true">${cells.join('')}</span>
-        <span class="shape-text"><b>${SHAPES[id].name}</b>
-        <small>${SHAPES[id].size}&times;${SHAPES[id].size}, ${SHAPES[id].pieces} each</small></span></button>`;
-    }).join('');
+    }
+    return `<span class="shape-grid" style="--n: ${n}" aria-hidden="true">${cells.join('')}</span>`;
+  }
+
+  function showSizeMenu() {
+    document.getElementById('size-list').innerHTML = BOARD_SIZES.map(({ name, size }) =>
+      `<button type="button" class="shape-btn" data-size="${size}">${boardPicture(size)}
+        <span class="shape-text"><b>${name}</b><small>${size}&times;${size}</small></span></button>`
+    ).join('');
+    showMenuPage('size');
+  }
+
+  // The shapes in that size. The ordinary 8x8 board isn't one of them — it's
+  // the game you get whenever the checkers are left standing — but the big
+  // one is, since there's no other way to play it.
+  function showShapeMenu(size) {
+    const ids = SHAPE_IDS.filter((id) => id !== 'full' && SHAPES[id].size === size);
+    document.getElementById('shape-list').innerHTML = ids.map((id) =>
+      `<button type="button" class="shape-btn" data-shape="${id}">${boardPicture(size, shapeMask(id))}
+        <span class="shape-text"><b>${SHAPES[id].name}</b><small>${SHAPES[id].pieces} each</small></span></button>`
+    ).join('');
     showMenuPage('shape');
   }
+
+  document.getElementById('size-list').addEventListener('click', (e) => {
+    const btn = e.target.closest('[data-size]');
+    if (btn) showShapeMenu(Number(btn.dataset.size));
+  });
 
   document.getElementById('shape-list').addEventListener('click', (e) => {
     const btn = e.target.closest('[data-shape]');

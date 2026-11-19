@@ -94,13 +94,23 @@ module.exports = {
 
   'a bigger board really is bigger'() {
     const game = new CheckersGame();
-    game.reset('big');
+    game.reset('bigdiamond');
     assert.strictEqual(engine.SIZE, 10, 'the size follows the board');
-    assert.strictEqual(pieceCount(game, RED), 20);
-    assert(game.onBoard(9, 8), 'row nine exists');
+    assert.strictEqual(pieceCount(game, RED), SHAPES.bigdiamond.pieces);
+    assert(game.onBoard(5, 9), 'column nine exists');
     game.reset('full');
     assert.strictEqual(engine.SIZE, 8, 'and goes back again');
-    assert.strictEqual(game.onBoard(9, 8), false);
+    assert.strictEqual(game.onBoard(5, 9), false);
+  },
+
+  'both sizes offer the same shapes, and Big has a full board too'() {
+    // The chooser asks for a size, then a shape, so every outline needs both.
+    // The full 8x8 board is the ordinary game, so only Big lists one.
+    const offered = (size) => SHAPE_IDS
+      .filter((id) => id !== 'full' && SHAPES[id].size === size)
+      .map((id) => SHAPES[id].name);
+    assert.deepStrictEqual(offered(8), ['X', 'Diamond', 'Plus', 'Ellipse']);
+    assert.deepStrictEqual(offered(10), ['Big', ...offered(8)]);
   },
 
   'a clone keeps the shape'() {
