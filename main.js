@@ -315,7 +315,7 @@
     if (BOARD_MENUS.every((page) => menuPages[page].hidden)) return;
     shapesOn = !shapesOn;
     knockTokens();
-    // The first and bot lists turn upside down: How to Play first, hardest first.
+    // Every one of those lists turns upside down, too.
     menuEl.classList.toggle('shapes-on', shapesOn);
   });
 

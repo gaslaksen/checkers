@@ -142,6 +142,14 @@ button {
 #menu.shapes-on #menu-difficulty .level-normal { order: 2; }
 #menu.shapes-on #menu-difficulty .level-easy { order: 3; }
 #menu.shapes-on #menu-difficulty .menu-back { order: 4; }
+#menu.shapes-on #menu-multiplayer .menu-label { order: 0; }
+#menu.shapes-on #open-online { order: 1; }
+#menu.shapes-on #play-local { order: 2; }
+#menu.shapes-on #menu-multiplayer .menu-back { order: 3; }
+#menu.shapes-on #menu-online .menu-label { order: 0; }
+#menu.shapes-on #open-join { order: 1; }
+#menu.shapes-on #create-game { order: 2; }
+#menu.shapes-on #menu-online .menu-back { order: 3; }
 
 .title {
   margin: 0 0 40px;
