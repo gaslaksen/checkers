@@ -54,7 +54,7 @@ const OUTLINES = {
   ellipse: (r, c, n) => Math.abs(c - (n - 1) / 2) <= (n - 1) / 2 - Math.abs(r - (n - 1) / 2) * 0.6,
 };
 
-// Classic is the ordinary game, and Big is the same at ten across. The
+// Classic is the ordinary game, and Classic Big the same at ten across. The
 // outlines come in both sizes, since the board chooser asks for the size
 // first and then lists what that size has.
 const SHAPES = {
@@ -63,7 +63,7 @@ const SHAPES = {
   diamond: { name: 'Diamond', size: 8, pieces: 6, fits: OUTLINES.diamond },
   plus: { name: 'Plus', size: 8, pieces: 8, fits: OUTLINES.plus },
   ellipse: { name: 'Ellipse', size: 8, pieces: 5, fits: OUTLINES.ellipse },
-  big: { name: 'Big', size: 10, pieces: 20, fits: () => true },
+  big: { name: 'Classic Big', size: 10, pieces: 20, fits: () => true },
   bigx: { name: 'X', size: 10, pieces: 6, fits: OUTLINES.x },
   bigdiamond: { name: 'Diamond', size: 10, pieces: 11, fits: OUTLINES.diamond },
   bigplus: { name: 'Plus', size: 10, pieces: 9, fits: OUTLINES.plus },

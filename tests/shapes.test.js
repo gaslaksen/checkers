@@ -110,7 +110,7 @@ module.exports = {
       .filter((id) => id !== 'full' && SHAPES[id].size === size)
       .map((id) => SHAPES[id].name);
     assert.deepStrictEqual(offered(8), ['X', 'Diamond', 'Plus', 'Ellipse']);
-    assert.deepStrictEqual(offered(10), ['Big', ...offered(8)]);
+    assert.deepStrictEqual(offered(10), ['Classic Big', ...offered(8)]);
   },
 
   'a clone keeps the shape'() {
