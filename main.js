@@ -307,12 +307,15 @@
   // that and you get to choose what shape the board is.
   const tokensEl = document.getElementById('menu-tokens');
 
+  // Every menu with a way to a board: the first one, the bot one, and the
+  // two multiplayer ones (Same Device, and Create Game online).
+  const BOARD_MENUS = ['main', 'difficulty', 'multiplayer', 'online'];
+
   tokensEl.addEventListener('click', () => {
-    // On the menus where it leads somewhere: the first one and the bot one.
-    if (menuPages.main.hidden && menuPages.difficulty.hidden) return;
+    if (BOARD_MENUS.every((page) => menuPages[page].hidden)) return;
     shapesOn = !shapesOn;
     knockTokens();
-    // Both lists turn upside down: hardest first, Settings first.
+    // The first and bot lists turn upside down: How to Play first, hardest first.
     menuEl.classList.toggle('shapes-on', shapesOn);
   });
 
