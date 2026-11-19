@@ -201,7 +201,7 @@
     panel.addEventListener('click', (e) => {
       const help = e.target.closest('.slot.help');
       if (help) {
-        showGuide();
+        if (!help.disabled) showGuide();
         return;
       }
       const btn = e.target.closest('.slot[data-ability]');
@@ -1208,6 +1208,10 @@
     else if (game.drawn) text = 'Draw!';
     const html = `<span class="swatch ${color}"></span><span>${text}</span>`;
     for (const el of statusEls) el.innerHTML = html;
+    // Once the game is over there's nothing to react to — the board is just
+    // there to look at.
+    for (const btn of document.querySelectorAll('.react-toggle')) btn.disabled = game.over;
+    if (game.over) reactionsEl.hidden = true;
   }
 
   function renderPanel(color) {
@@ -1286,7 +1290,7 @@
         </div>
       </div>
       <div class="abilities">${buttons.join('')}
-        <button type="button" class="slot help" title="What do these do?" aria-label="Ability guide">?</button>
+        <button type="button" class="slot help" title="What do these do?" aria-label="Ability guide" ${game.over ? 'disabled' : ''}>?</button>
       </div>
       <div class="panel-line">${line}</div>`;
   }

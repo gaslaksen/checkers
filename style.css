@@ -601,6 +601,14 @@ a.menu-back {
 
 .slot[data-ability]:disabled { opacity: 0.45; cursor: default; }
 
+/* Greyed out once the game is over and you're only looking at the board. */
+.react-toggle:disabled,
+.slot.help:disabled {
+  opacity: 0.35;
+  filter: grayscale(1);
+  pointer-events: none;
+}
+
 .slot.active {
   background: #3a3b43;
   box-shadow: 0 0 0 2px currentColor;
