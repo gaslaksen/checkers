@@ -279,7 +279,7 @@
   for (const btn of document.querySelectorAll('.to-menu')) btn.addEventListener('click', askLeaveGame);
   // Menu buttons and the like get a quiet tick.
   document.addEventListener('click', (e) => {
-    if (e.target.closest('.menu-btn, .menu-back, .to-menu, #join-game')) Sound.play('click');
+    if (e.target.closest('.menu-btn, .menu-back, .to-menu, .settings-btn, #join-game')) Sound.play('click');
   });
   document.getElementById('confirm-yes').addEventListener('click', () => {
     confirmEl.hidden = true;

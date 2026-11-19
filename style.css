@@ -177,6 +177,24 @@ button {
   width: min(300px, 100%);
 }
 
+/* Settings sits in the corner as a round gear, out of the way of the menu.
+   It lives in the main menu's list, so it shows and hides with that page.
+   Kept clear of the status bar and notch: taps in that strip never arrive. */
+.settings-btn {
+  position: fixed;
+  top: calc(env(safe-area-inset-top, 0px) + 12px);
+  right: calc(env(safe-area-inset-right, 0px) + 12px);
+  width: 46px;
+  height: 46px;
+  padding: 0;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  font-size: 1.35rem;
+  line-height: 1;
+  z-index: 20;
+}
+
 .menu-btn {
   display: flex;
   flex-direction: column;
