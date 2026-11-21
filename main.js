@@ -153,9 +153,14 @@
   }
 
   // Can this device act right now?
-  const canAct = () =>
-    !game.over && isHuman(game.turn) && !pendingIntent && !connectionLost && !game.pendingReward(game.turn)
-    && !(mode === 'local' && game.pendingReward(opponent(game.turn))); // the other player is still choosing
+  // Rewards wait while a multi-jump is in progress: you finish jumping, then
+  // choose what each jump earned.
+  const canAct = () => {
+    if (game.over || !isHuman(game.turn) || pendingIntent || connectionLost) return false;
+    if (game.chainPiece) return true;
+    return !game.pendingReward(game.turn)
+      && !(mode === 'local' && game.pendingReward(opponent(game.turn))); // the other player is still choosing
+  };
 
   // ---------- Setup ----------
 
@@ -1613,6 +1618,7 @@
   // jumped, so they choose straight away instead of waiting for their opponent.
   function rewardChooser() {
     if (connectionLost || game.over) return null; // the jump that wins needs no reward
+    if (game.chainPiece) return null; // not mid multi-jump: the choices come after (see canAct)
     for (const color of [lastActor, game.turn, opponent(game.turn)]) {
       if (color && isHuman(color) && game.pendingReward(color)) return color;
     }
