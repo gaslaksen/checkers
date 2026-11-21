@@ -37,7 +37,7 @@
       pick: 'Pick an enemy piece next to one of yours.', dest: 'Pick where to push it.',
     },
     splitMove: {
-      name: 'Split Move', icon: '✌️',
+      name: 'Split Move', icon: '➗',
       help: 'Move a piece one square, then make your move — with the same piece or a different one.',
       pick: 'Pick a piece to move one square.', dest: 'Pick where it goes.',
     },
