@@ -186,8 +186,8 @@ button {
 }
 
 /* Settings sits in the corner as a round gear, out of the way of the menu.
-   It lives in the main menu's list, so it shows and hides with that page.
-   Kept clear of the status bar and notch: taps in that strip never arrive. */
+   It's part of the menu screen, so it's there on every menu and gone during
+   a game. Kept clear of the status bar and notch: taps there never arrive. */
 .settings-btn {
   position: fixed;
   top: calc(env(safe-area-inset-top, 0px) + 12px);

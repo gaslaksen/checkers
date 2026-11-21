@@ -415,6 +415,8 @@
 
   function showMenuPage(page) {
     for (const [name, el] of Object.entries(menuPages)) el.hidden = name !== page;
+    // The gear is on every menu, except the one it opens.
+    document.getElementById('open-settings').hidden = page === 'settings';
   }
 
   function startGame(newMode, level, shape = 'full') {
@@ -1406,7 +1408,10 @@
 
   const soundToggle = document.getElementById('toggle-sound');
 
+  // Settings opens from any menu, and Back goes to whichever one that was.
   function showSettings() {
+    const from = Object.keys(menuPages).find((name) => !menuPages[name].hidden) || 'main';
+    menuPages.settings.querySelector('[data-back]').dataset.back = from;
     renderSettings();
     showMenuPage('settings');
   }
