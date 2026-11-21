@@ -434,6 +434,7 @@
     hideResult();
     hideAnnounce();
     syncBoardFrame();
+    for (const sq of squaresEl.children) sq.classList.remove('flash'); // see flash()
     // Two players on one device: the top half is turned around for the player
     // sitting opposite, and each side gets its own status bar and Menu button.
     gameEl.classList.toggle('hotseat', mode === 'local');
@@ -2016,5 +2017,13 @@
     sq.classList.remove('flash');
     void sq.offsetWidth; // restart the animation
     sq.classList.add('flash');
+    // Take it off once it's done. Left on, it replays whenever the board is
+    // shown again, so the next game would open with old squares flashing.
+    const done = (e) => {
+      if (e.animationName !== 'flash') return;
+      sq.classList.remove('flash');
+      sq.removeEventListener('animationend', done);
+    };
+    sq.addEventListener('animationend', done);
   }
 })();
