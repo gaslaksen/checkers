@@ -213,7 +213,11 @@ const Bot = (() => {
   // What each ability is worth to the bot when picking a reward. Roughly how
   // much a good player would want it, with the situation taken into account.
   function wantValue(game, color, ability) {
-    const base = { sidestep: 12, retreat: 10, extraStep: 16, shield: 30, freeze: 32, push: 26, swap: 30, crown: 55, revive: 50 };
+    const base = {
+      sidestep: 12, retreat: 10, extraStep: 16, push: 20,
+      shield: 30, freeze: 32, swap: 30, splitMove: 30,
+      crown: 55, revive: 50,
+    };
     let value = base[ability];
     if (ability === 'revive' && game.lost[color] === 0) value = 5; // nothing to bring back
     if (ability === 'crown') {

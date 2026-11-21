@@ -42,15 +42,16 @@ ability can be swapped for one you hold, or turned down.
 | Common | Sidestep | Two squares sideways. This is your move. |
 | Common | Retreat | A regular piece moves one square diagonally back. This is your move. |
 | Common | Extra Step | A piece steps forward twice. This is your move. |
+| Common | Push | Shove an enemy piece next to one of yours one square away. |
 | Rare | Shield | Your piece can't be captured or targeted until your next turn. |
 | Rare | Freeze | An enemy piece can't move on its next turn. |
-| Rare | Push | Shove an enemy piece next to one of yours one square away. |
 | Rare | Swap | Trade places with the nearest enemy piece. |
+| Rare | Split Move | Move a piece one square, then make your move with it or another. |
 | Epic | Crown | Make one of your pieces a king instantly. |
 | Epic | Revive | Put a captured piece back on your back row. |
 
-One ability per turn, used at the start of it. The Common ones are your move for
-the turn; after any of the others, you still move.
+One ability per turn, used at the start of it. Sidestep, Retreat and Extra Step
+are your move for the turn; after any of the others, you still move.
 
 A game is a draw after 40 moves each with no capture, no new king and no Revive.
 

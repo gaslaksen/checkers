@@ -128,6 +128,41 @@ module.exports = {
     assert.strictEqual(wouldCrown.abilityActions('push').length, 0);
   },
 
+  'split move steps one piece, then you still move — the same piece or another'() {
+    const setUp = (g) => {
+      put(g, 5, 2, RED);
+      put(g, 5, 6, RED);
+      put(g, 0, 7, BLACK);
+    };
+    // Plain steps only, in the piece's usual directions.
+    const game = withAbility('splitMove', setUp);
+    assert.deepStrictEqual(destinations(game, 'splitMove', [5, 2]), ['4,1', '4,3']);
+    assert(game.useAbility({ ability: 'splitMove', select: [5, 2], dest: [4, 3] }));
+    assert.strictEqual(game.turn, RED, 'you still move');
+    assert.strictEqual(game.inventory[RED].splitMove, 0);
+    assert(game.move({ from: [4, 3], to: [3, 4] }), 'the same piece can go again');
+    assert.strictEqual(game.turn, BLACK);
+
+    const other = withAbility('splitMove', setUp);
+    other.useAbility({ ability: 'splitMove', select: [5, 2], dest: [4, 3] });
+    assert(other.move({ from: [5, 6], to: [4, 7] }), 'or a different one');
+  },
+
+  'split move never jumps, crowns on the far row, and skips frozen pieces'() {
+    const game = withAbility('splitMove', (g) => {
+      put(g, 5, 2, RED);
+      put(g, 4, 3, BLACK); // could be jumped, but not by a split move
+      put(g, 1, 6, RED);
+      put(g, 6, 5, RED, { frozen: true });
+      put(g, 0, 1, BLACK);
+    });
+    assert.deepStrictEqual(destinations(game, 'splitMove', [5, 2]), ['4,1']);
+    assert.deepStrictEqual(destinations(game, 'splitMove', [6, 5]), []);
+    game.useAbility({ ability: 'splitMove', select: [1, 6], dest: [0, 7] });
+    assert.strictEqual(game.board[0][7].king, true, 'crowned');
+    assert.strictEqual(game.turn, RED, 'and you still move');
+  },
+
   'swap trades with the nearest enemy piece in any direction'() {
     const game = withAbility('swap', (g) => {
       put(g, 4, 3, RED);

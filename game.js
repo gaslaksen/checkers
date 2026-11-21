@@ -25,10 +25,11 @@ const ABILITIES = {
   sidestep: { tier: 'common', kind: 'move' },
   retreat: { tier: 'common', kind: 'move' },
   extraStep: { tier: 'common', kind: 'move' },
+  push: { tier: 'common', kind: 'pre' },
   shield: { tier: 'rare', kind: 'pre' },
   freeze: { tier: 'rare', kind: 'pre' },
-  push: { tier: 'rare', kind: 'pre' },
   swap: { tier: 'rare', kind: 'pre' },
+  splitMove: { tier: 'rare', kind: 'pre' },
   crown: { tier: 'epic', kind: 'pre' },
   revive: { tier: 'epic', kind: 'pre' },
 };
@@ -513,6 +514,12 @@ class CheckersGame {
             }
             break;
 
+          case 'splitMove':
+            // One plain step for any of your pieces before your normal move,
+            // which can be the same piece again or a different one.
+            if (own) for (const step of this.pieceMoves(r, c).steps) add([r, c], step.to);
+            break;
+
           case 'crown':
             if (own && !p.king) add([r, c]);
             break;
@@ -539,11 +546,13 @@ class CheckersGame {
       case 'sidestep':
       case 'retreat':
       case 'extraStep':
-      case 'push': {
+      case 'push':
+      case 'splitMove': {
         const [dr, dc] = legal.dest;
         this.board[sr][sc] = null;
         this.board[dr][dc] = piece;
-        if (ability === 'extraStep' && !piece.king && dr === kingRow(color)) {
+        const ownPiece = ability === 'extraStep' || ability === 'splitMove';
+        if (ownPiece && !piece.king && dr === kingRow(color)) {
           piece.king = true;
           promoted = true;
           this.madeProgress = true;

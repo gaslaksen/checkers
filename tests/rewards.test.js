@@ -126,25 +126,19 @@ module.exports = {
     for (let i = 0; i < 10; i++) {
       const game = offerOf('rare', ['shield', 'freeze']);
       const offer = game.rerollReward(RED);
-      assert(sameSet(offer.options, ['push', 'swap']), offer.options.join());
+      assert(sameSet(offer.options, ['swap', 'splitMove']), offer.options.join());
       assert.strictEqual(offer.tier, 'rare');
       assert.strictEqual(game.pendingReward(RED), offer);
     }
   },
 
-  'a Common reroll offers a different pair, with one new ability'() {
-    const seen = new Set();
-    for (let i = 0; i < 30; i++) {
+  'a Common reroll offers the other two Common abilities'() {
+    for (let i = 0; i < 10; i++) {
       const game = offerOf('common', ['sidestep', 'retreat']);
       const { options } = game.rerollReward(RED);
-      assert.strictEqual(options.length, 2);
-      assert.notStrictEqual(options[0], options[1]);
       assert(options.every((id) => ABILITIES[id].tier === 'common'));
-      assert(options.includes('extraStep'), 'the one it was missing');
-      assert(!sameSet(options, ['sidestep', 'retreat']));
-      seen.add([...options].sort().join());
+      assert(sameSet(options, ['extraStep', 'push']), options.join());
     }
-    assert.strictEqual(seen.size, 2, 'either old one can stay');
   },
 
   'each offer can be rerolled once'() {
@@ -174,8 +168,8 @@ module.exports = {
     const game = offerOf('rare', ['shield', 'freeze']);
     game.rerollReward(RED);
     assert.strictEqual(game.chooseReward(RED, 'shield'), null);
-    assert.strictEqual(game.chooseReward(RED, 'push').ability, 'push');
-    assert.strictEqual(game.inventory[RED].push, 1);
+    assert.strictEqual(game.chooseReward(RED, 'splitMove').ability, 'splitMove');
+    assert.strictEqual(game.inventory[RED].splitMove, 1);
   },
 
   'only the first waiting offer is rerolled'() {

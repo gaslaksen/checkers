@@ -36,6 +36,11 @@
       help: 'Shove an enemy piece next to one of yours one square away. Then make your move.',
       pick: 'Pick an enemy piece next to one of yours.', dest: 'Pick where to push it.',
     },
+    splitMove: {
+      name: 'Split Move', icon: '✌️',
+      help: 'Move a piece one square, then make your move — with the same piece or a different one.',
+      pick: 'Pick a piece to move one square.', dest: 'Pick where it goes.',
+    },
     swap: {
       name: 'Swap', icon: '🔄',
       help: 'Swap one of your pieces with the nearest enemy piece, in front or behind. Then make your move.',
@@ -1914,6 +1919,14 @@
       case 'swap':
         teleport(moved, select, dest);
         teleport(elementAt(select), dest, select);
+        break;
+
+      case 'splitMove': // a quick hop, with the real move still to come
+        animate(moved, [
+          { transform: 'translateY(0) scale(1)' },
+          { transform: 'translateY(-12%) scale(1.08)', offset: 0.4 },
+          { transform: 'translateY(0) scale(1)' },
+        ], { duration: 260, easing: 'ease-out' });
         break;
 
       case 'push':

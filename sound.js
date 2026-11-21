@@ -157,6 +157,12 @@ const Sound = (() => {
       knock(c, at + 0.16, { pitch: vary(680), peak: 0.5, click: 0.35 });
     },
 
+    // One quick, light step: the move proper is still to come.
+    abilitySplitMove: (c, at) => {
+      swish(c, at, { from: 900, to: 1600, duration: 0.09, peak: 0.13 });
+      knock(c, at + 0.03, { pitch: vary(720), peak: 0.42, click: 0.3 });
+    },
+
     // A bubble swelling into place.
     abilityShield: (c, at) => {
       tone(c, at, { freq: 392, slideTo: 784, type: 'sine', peak: 0.3, duration: 0.42, attack: 0.06 });
