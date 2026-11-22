@@ -860,8 +860,8 @@ a.menu-back {
 /* What a global search is for, above the spinner. */
 .search-board { margin: 0; font-weight: 700; text-align: center; }
 
-/* Two players face to face as a global match begins: over everything, and
-   it takes no taps. */
+/* Two players face to face as an online game begins, over everything. It
+   catches taps too, so nothing on the hidden board gets moved by accident. */
 .versus {
   position: fixed;
   inset: 0;
@@ -873,7 +873,6 @@ a.menu-back {
   gap: 18px;
   padding: 16px;
   background: radial-gradient(ellipse at 50% 40%, #26282e, var(--bg) 70%);
-  pointer-events: none;
 }
 
 /* Lined up by the top, so a long name wrapping can't lift its picture. */

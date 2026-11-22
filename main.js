@@ -533,6 +533,7 @@
     reactionsEl.hidden = true;
     hideReward();
     hideAnnounce();
+    hideVersus();
     leaveOnline();
     hideResult();
     showMenuPage('main');
@@ -545,8 +546,29 @@
   function leaveOnline() {
     netSession++;
     connectionLost = false;
+    metFriend = false;
     Net.sayGoodbye();
     Net.disconnect();
+  }
+
+  // Both players' Game Center accounts face to face as an online game starts.
+  // Each device sends its own with its first message (the host's start, the
+  // guest's hello), and the versus screen shows once: rematches skip it.
+  // Without Game Center — everyone on the website — it's You and Friend.
+  let metFriend = false;
+
+  const yourPlayer = () => GameCenter.player() || { name: 'You', photo: null };
+
+  function meetFriend(them) {
+    metFriend = true;
+    showVersus(yourPlayer(), trustedPlayer(them) || { name: 'Friend', photo: null }, game.shape);
+  }
+
+  // The host's versus screen is up before the guest's hello arrives; when it
+  // does, their side fills in.
+  function friendArrived(them) {
+    const player = trustedPlayer(them);
+    if (player) fillVersus('them', player);
   }
 
   // Handlers for one connection; `token` guards against a stale one.
@@ -558,7 +580,8 @@
         isHost = true;
         myColor = RED;
         startGame('online', null, boardShape); // the board you picked
-        Net.send({ type: 'start', state: game.snapshot() });
+        Net.send({ type: 'start', state: game.snapshot(), player: GameCenter.player() });
+        meetFriend(null); // their name follows, in their hello
       },
       message: (msg) => {
         if (token === netSession) onNetMessage(msg, asHost);
@@ -653,6 +676,7 @@
       return;
     }
     if (asHost) {
+      if (msg.type === 'hello') friendArrived(msg.player);
       if (msg.type === 'intent') applyGuestIntent(msg);
       return;
     }
@@ -662,6 +686,10 @@
       startGame('online');
       game.restore(msg.state);
       render();
+      if (!metFriend) { // the first game on this connection, not a rematch
+        Net.send({ type: 'hello', player: GameCenter.player() });
+        meetFriend(msg.player);
+      }
       return;
     }
     if (msg.type === 'state') {
@@ -1479,26 +1507,36 @@
   // Each is { name, photo }, where photo is an image URL, or nothing for
   // their first letter instead. Matchmaking will call this when it finds
   // someone; resolves once it's gone and the game can start.
+  let versusId = 0;
+
   function showVersus(you, them, shape, ms = 2600) {
     const el = document.getElementById('versus');
-    const fill = (side, player) => {
-      const avatar = el.querySelector(`.${side} .versus-avatar`);
-      avatar.style.backgroundImage = player.photo ? `url("${player.photo}")` : '';
-      avatar.textContent = player.photo ? '' : (player.name.trim()[0] || '?').toUpperCase();
-      el.querySelector(`.${side} .versus-name`).textContent = player.name;
-    };
-    fill('you', you);
-    fill('them', them);
+    fillVersus('you', you);
+    fillVersus('them', them);
     const { name, size } = SHAPES[shape];
     el.querySelector('.versus-board').textContent = `${name} · ${size}×${size}`;
     el.classList.remove('show');
     el.hidden = false;
     void el.offsetWidth; // restart the animation
     el.classList.add('show');
+    const mine = ++versusId;
     return new Promise((resolve) => setTimeout(() => {
-      el.hidden = true;
+      if (mine === versusId) el.hidden = true;
       resolve();
     }, ms));
+  }
+
+  function fillVersus(side, player) {
+    const el = document.getElementById('versus');
+    const avatar = el.querySelector(`.${side} .versus-avatar`);
+    avatar.style.backgroundImage = player.photo ? `url("${player.photo}")` : '';
+    avatar.textContent = player.photo ? '' : (player.name.trim()[0] || '?').toUpperCase();
+    el.querySelector(`.${side} .versus-name`).textContent = player.name;
+  }
+
+  function hideVersus() {
+    versusId++;
+    document.getElementById('versus').hidden = true;
   }
 
   // ---------- Settings ----------

@@ -29,3 +29,33 @@ const Haptics = (() => {
 })();
 
 if (typeof module !== 'undefined') module.exports = { IS_APP, nativePlugin, Haptics };
+
+// The player's Game Center account, in the app: their name and picture, for
+// the versus screen. Signing in starts as soon as the app opens, the way
+// Game Center expects, so it's usually done before anyone needs it. The
+// website has no Game Center, so there nobody is signed in. The native side
+// is ios/App/App/GameCenterPlugin.swift.
+const GameCenter = (() => {
+  let you = null; // { name, photo } once signed in
+
+  const plugin = nativePlugin('GameCenter');
+  if (plugin) {
+    plugin.signIn()
+      .then((info) => {
+        if (info && info.signedIn && info.name) you = { name: info.name, photo: info.photo || null };
+      })
+      .catch(() => {}); // not signed in: play on without a name
+  }
+
+  return { player: () => you };
+})();
+
+// A player as sent by someone else's device: only a name, and a picture only
+// if it's an image we made (see GameCenterPlugin.swift). Anything else, and
+// they're shown without one.
+function trustedPlayer(player) {
+  if (!player || typeof player.name !== 'string' || !player.name.trim()) return null;
+  const photo = typeof player.photo === 'string' && player.photo.length < 100000
+    && /^data:image\/(?:jpeg|png);base64,[A-Za-z0-9+/=]+$/.test(player.photo) ? player.photo : null;
+  return { name: player.name.trim().slice(0, 30), photo };
+}

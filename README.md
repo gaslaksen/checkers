@@ -66,7 +66,7 @@ Plain HTML, CSS and JavaScript — no build step for the website. Open
 - `main.js` — screens, board and input
 - `sound.js` — sound effects, synthesized in code
 - `store.js` — settings and results remembered between visits
-- `platform.js` — whether it's running in the iPhone app, and haptics there
+- `platform.js` — whether it's running in the iPhone app, and haptics and Game Center there
 - `ads.js` — when the app may show an ad (the website never does)
 - `vendor/peerjs.min.js` — PeerJS 1.5.5, served from here rather than a CDN
 - `sw.js`, `manifest.json` — offline support and home-screen install
@@ -85,6 +85,13 @@ That copies `index.html` and everything it links to into `www/`, syncs it
 into the Xcode project and opens Xcode, where you pick a simulator or phone
 and press Run. Run `npm run build` and `npx cap sync ios` after changing any
 web file. `scripts/draw-icons.html` draws the app icon and launch image.
+
+Game Center signs players in when the app opens, through a small plugin in
+the Xcode project (`GameCenterPlugin.swift`, registered in
+`MainViewController.swift`). Their name and picture show on the versus
+screen at the start of an online game. It only works once the app exists
+in App Store Connect with Game Center turned on; until then, and on the
+website, players are shown as You and Friend.
 
 ## Tests
 
