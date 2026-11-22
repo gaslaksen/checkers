@@ -36,10 +36,23 @@
         Multiplayer
         <small>Play with a friend</small>
       </button>
+      <button id="open-global" type="button" class="menu-btn">
+        Global Play
+        <small>Play a random person</small>
+      </button>
       <button id="install-app" type="button" class="menu-btn" hidden>
         Install
         <small>Add it to your home screen</small>
       </button>
+    </div>
+    <div id="menu-global" class="menu-buttons" hidden>
+      <p class="menu-label">Global Play</p>
+      <button id="find-match" type="button" class="menu-btn primary">
+        Find a Match
+        <small>Get paired with a random player</small>
+      </button>
+      <p id="global-status" class="menu-note" aria-live="polite"></p>
+      <button type="button" class="menu-back" data-back="main">Back</button>
     </div>
     <div id="menu-settings" class="menu-buttons" hidden>
       <p class="menu-label">Settings</p>

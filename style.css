@@ -234,6 +234,8 @@ button {
   color: #2a1d08;
   box-shadow: 0 4px 0 #8c6a1c;
 }
+/* The usual grey all but disappears on gold. */
+.menu-btn.primary small { color: rgba(42, 29, 8, 0.72); }
 
 .menu-label {
   margin: 0 0 4px;
@@ -830,6 +832,24 @@ a.menu-back {
   color: var(--muted);
 }
 .menu-note.error { color: var(--red-hi); }
+
+/* A small spinner beside the words while a search is running. */
+.menu-note.searching::before {
+  content: "";
+  display: inline-block;
+  width: 0.9em;
+  height: 0.9em;
+  margin-right: 8px;
+  vertical-align: -0.12em;
+  border: 2px solid currentColor;
+  border-right-color: transparent;
+  border-radius: 50%;
+  animation: searching-spin 0.8s linear infinite;
+}
+
+@keyframes searching-spin {
+  to { transform: rotate(360deg); }
+}
 
 .code-display {
   padding: 14px 20px;

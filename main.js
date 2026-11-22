@@ -84,6 +84,7 @@
     glitch: document.getElementById('menu-glitch'),
     tooeasy: document.getElementById('menu-tooeasy'),
     settings: document.getElementById('menu-settings'),
+    global: document.getElementById('menu-global'),
     multiplayer: document.getElementById('menu-multiplayer'),
     online: document.getElementById('menu-online'),
     create: document.getElementById('menu-create'),
@@ -1412,6 +1413,43 @@
       el.appendChild(bit);
     }
   }
+
+  // ---------- Global play ----------
+
+  // Playing a random person needs a matchmaking server, which doesn't exist
+  // yet. Until it does, a search shows what it will look like, then says so.
+  // When there is one, startSearching is where it gets asked for a match.
+  const findMatchBtn = document.getElementById('find-match');
+  const globalStatusEl = document.getElementById('global-status');
+  const SEARCH_MS = 2500; // how long the stand-in search runs
+  let searchTimer = null;
+
+  function showGlobal() {
+    stopSearching();
+    showMenuPage('global');
+  }
+
+  function startSearching() {
+    findMatchBtn.classList.remove('primary');
+    findMatchBtn.innerHTML = 'Cancel <small>Stop looking</small>';
+    setNote(globalStatusEl, 'Looking for a player');
+    globalStatusEl.classList.add('searching');
+    searchTimer = setTimeout(() => {
+      stopSearching(menuPages.global.hidden ? '' : "Global play isn't ready yet. Check back soon!");
+    }, SEARCH_MS);
+  }
+
+  function stopSearching(note = '') {
+    clearTimeout(searchTimer);
+    searchTimer = null;
+    findMatchBtn.classList.add('primary');
+    findMatchBtn.innerHTML = 'Find a Match <small>Get paired with a random player</small>';
+    globalStatusEl.classList.remove('searching');
+    setNote(globalStatusEl, note);
+  }
+
+  document.getElementById('open-global').addEventListener('click', showGlobal);
+  findMatchBtn.addEventListener('click', () => (searchTimer ? stopSearching() : startSearching()));
 
   // ---------- Settings ----------
 
