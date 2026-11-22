@@ -880,16 +880,16 @@
     lastPath = lastPath.length && isAt(lastPath[lastPath.length - 1], ...move.from)
       ? [...lastPath, move.to]
       : [move.from, move.to];
-    if (result.reward) rewardToast(result.reward, '');
-    if (result.comeback) rewardToast(result.comeback, ' (comeback)');
+    if (result.reward) rewardSound(result.reward);
+    if (result.comeback) rewardSound(result.comeback);
     return result;
   }
 
   // A jump earns a choice, made at the start of that player's next turn.
-  function rewardToast({ color, tier }, note) {
+  // Earning a reward just chimes. What it turned out to be gets its message
+  // when it's chosen ("took …"), so it isn't said twice.
+  function rewardSound({ tier }) {
     sfx(`reward${capitalize(tier)}`);
-    const a = tier === 'epic' ? 'an' : 'a';
-    toast(`${label(color)} earned ${a} ${TIER_NAME[tier]} ability${note}`, tier);
   }
 
   function useAbility(action) {
@@ -903,12 +903,6 @@
     raise(result.piece);
     if (action.dest) lastPath = [action.select, action.dest];
     flash(action.dest || action.select);
-    // Online, both sides get told — otherwise your friend sees pieces move for
-    // no visible reason.
-    if (!isHuman(color) || mode === 'online') {
-      const info = ABILITY_INFO[action.ability];
-      toast(`${label(color)} used ${iconTag(action.ability)} ${info.name}`, tierOf(action.ability));
-    }
     render();
     abilityEffect(action);
     if (mode === 'online' && isHost) netAction = action; // so the guest can animate it too
@@ -1104,7 +1098,7 @@
     // You still get the credit for losing it.
     if (++game.comeback[RED] >= COMEBACK_EVERY) {
       game.comeback[RED] = 0;
-      rewardToast(game.advanceTrack(RED), ' (comeback)');
+      rewardSound(game.advanceTrack(RED));
     }
     botReact('cheated', { always: true });
     // Let the blast finish before the board moves on.
@@ -1314,11 +1308,14 @@
       hint = 'Now make your move.';
     }
 
-    // One reserved line per panel: the hint while aiming an ability, otherwise
-    // whatever just happened. Reserved so the board never shifts.
+    // One reserved line per panel, so the board never shifts: the hint while
+    // aiming an ability, otherwise whatever just happened. Messages go in the
+    // top panel only — except for two players on one device, where each
+    // panel gets a copy so both can read it the right way up.
+    const showsMessages = mode === 'local' || color === BLACK;
     const line = hint
       ? `<span class="panel-hint">${hint}</span>`
-      : message
+      : message && showsMessages
         ? `<span class="panel-message tier-${message.tier}" data-msg="${message.id}">${message.text}</span>`
         : '';
 
@@ -2005,9 +2002,9 @@
     Haptics.feel(name);
   }
 
-  // Messages appear in both players' panels rather than over the board, so
-  // they never hide the pieces and each player reads their own copy the right
-  // way up. They queue, so a burst of them doesn't overwrite itself.
+  // Messages appear in a panel rather than over the board, so they never hide
+  // the pieces (see renderPanel for which). They queue, so a burst of them
+  // doesn't overwrite itself.
   const MESSAGE_MS = 1700;
 
   function toast(text, tier) {
