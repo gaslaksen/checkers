@@ -47,12 +47,21 @@
     </div>
     <div id="menu-global" class="menu-buttons" hidden>
       <p class="menu-label">Global Play</p>
-      <button id="find-match" type="button" class="menu-btn primary">
-        Find a Match
-        <small>Get paired with a random player</small>
+      <button id="global-classic" type="button" class="menu-btn primary">
+        Classic
+        <small>A normal checkers board</small>
       </button>
-      <p id="global-status" class="menu-note" aria-live="polite"></p>
+      <button id="global-random" type="button" class="menu-btn">
+        Random Shape
+        <small>A surprise board, picked for you</small>
+      </button>
       <button type="button" class="menu-back" data-back="main">Back</button>
+    </div>
+    <div id="menu-search" class="menu-buttons" hidden>
+      <p class="menu-label">Global Play</p>
+      <p id="search-board" class="search-board"></p>
+      <p id="global-status" class="menu-note" aria-live="polite"></p>
+      <button id="cancel-search" type="button" class="menu-btn">Cancel</button>
     </div>
     <div id="menu-settings" class="menu-buttons" hidden>
       <p class="menu-label">Settings</p>
@@ -189,6 +198,15 @@
   </div>
 
   <div id="announce" class="announce" aria-live="assertive" hidden></div>
+
+  <div id="versus" class="versus" hidden>
+    <div class="versus-row">
+      <div class="versus-player you"><div class="versus-avatar"></div><div class="versus-name"></div></div>
+      <div class="versus-vs">VS</div>
+      <div class="versus-player them"><div class="versus-avatar"></div><div class="versus-name"></div></div>
+    </div>
+    <p class="versus-board"></p>
+  </div>
 
   <div id="reward" class="result" hidden>
     <div class="result-card reward-card" role="dialog" aria-labelledby="reward-title">

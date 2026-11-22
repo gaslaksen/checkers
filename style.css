@@ -150,6 +150,12 @@ button {
 #menu.shapes-on #open-join { order: 1; }
 #menu.shapes-on #create-game { order: 2; }
 #menu.shapes-on #menu-online .menu-back { order: 3; }
+#menu.shapes-on #menu-global .menu-label { order: 0; }
+#menu.shapes-on #global-random { order: 1; }
+#menu.shapes-on #global-classic { order: 2; }
+#menu.shapes-on #menu-global .menu-back { order: 3; }
+/* Random Shape only exists with the checkers knocked over. */
+#menu:not(.shapes-on) #global-random { display: none; }
 
 .title {
   margin: 0 0 40px;
@@ -850,6 +856,68 @@ a.menu-back {
 @keyframes searching-spin {
   to { transform: rotate(360deg); }
 }
+
+/* What a global search is for, above the spinner. */
+.search-board { margin: 0; font-weight: 700; text-align: center; }
+
+/* Two players face to face as a global match begins: over everything, and
+   it takes no taps. */
+.versus {
+  position: fixed;
+  inset: 0;
+  z-index: 190;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 18px;
+  padding: 16px;
+  background: radial-gradient(ellipse at 50% 40%, #26282e, var(--bg) 70%);
+  pointer-events: none;
+}
+
+/* Lined up by the top, so a long name wrapping can't lift its picture. */
+.versus-row { display: flex; align-items: flex-start; gap: 10px; }
+
+.versus-player {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  width: 134px;
+}
+
+.versus-avatar {
+  width: 84px;
+  height: 84px;
+  display: grid;
+  place-items: center;
+  border: 3px solid var(--gold);
+  border-radius: 50%;
+  background: #2a2b31 center / cover no-repeat;
+  font-size: 2.2rem;
+  font-weight: 800;
+}
+.versus-player.them .versus-avatar { border-color: var(--red-hi); }
+
+/* Game Center names run up to about fifteen characters; anything longer wraps. */
+.versus-name { font-size: 0.9rem; font-weight: 700; text-align: center; overflow-wrap: anywhere; }
+.versus-vs {
+  margin-top: 21px; /* level with the middle of the pictures */
+  font-size: 2rem;
+  font-weight: 900;
+  color: var(--gold);
+  text-shadow: 0 2px 0 #000;
+}
+.versus-board { margin: 0; color: var(--muted); }
+
+.versus.show .you { animation: versus-left 500ms ease-out both; }
+.versus.show .them { animation: versus-right 500ms ease-out both; }
+.versus.show .versus-vs { animation: versus-vs 500ms 250ms ease-out both; }
+
+@keyframes versus-left { from { opacity: 0; transform: translateX(-60px); } }
+@keyframes versus-right { from { opacity: 0; transform: translateX(60px); } }
+@keyframes versus-vs { from { opacity: 0; transform: scale(2); } }
 
 .code-display {
   padding: 14px 20px;

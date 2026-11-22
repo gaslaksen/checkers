@@ -85,6 +85,7 @@
     tooeasy: document.getElementById('menu-tooeasy'),
     settings: document.getElementById('menu-settings'),
     global: document.getElementById('menu-global'),
+    search: document.getElementById('menu-search'),
     multiplayer: document.getElementById('menu-multiplayer'),
     online: document.getElementById('menu-online'),
     create: document.getElementById('menu-create'),
@@ -124,6 +125,7 @@
   let boardShape = 'full'; // which board this game is played on
   let builtShape = null; // the shape the squares on screen were built for
   let shapesOn = false; // the board chooser, once you've found it
+  let afterSize = null; // what picking a size leads to: the shapes, or a search
   let afterShape = null; // what to start once a board is chosen
   let session = 0; // bumped on new game / menu so stale bot timers do nothing
   let selected = null; // [r, c] of the piece picked for a normal move
@@ -322,9 +324,9 @@
   // that and you get to choose what shape the board is.
   const tokensEl = document.getElementById('menu-tokens');
 
-  // Every menu with a way to a board: the first one, the bot one, and the
-  // two multiplayer ones (Same Device, and Create Game online).
-  const BOARD_MENUS = ['main', 'difficulty', 'multiplayer', 'online'];
+  // Every menu with a way to a board: the first one, the bot one, the two
+  // multiplayer ones (Same Device, and Create Game online) and Global Play.
+  const BOARD_MENUS = ['main', 'difficulty', 'multiplayer', 'online', 'global'];
 
   tokensEl.addEventListener('click', () => {
     if (BOARD_MENUS.every((page) => menuPages[page].hidden)) return;
@@ -363,6 +365,11 @@
   // waiting on the answer.
   function chooseBoard(backTo, start) {
     afterShape = start;
+    chooseSize(backTo, showShapeMenu);
+  }
+
+  function chooseSize(backTo, next) {
+    afterSize = next;
     menuPages.size.querySelector('[data-back]').dataset.back = backTo;
     showSizeMenu();
   }
@@ -402,7 +409,7 @@
 
   document.getElementById('size-list').addEventListener('click', (e) => {
     const btn = e.target.closest('[data-size]');
-    if (btn) showShapeMenu(Number(btn.dataset.size));
+    if (btn && afterSize) afterSize(Number(btn.dataset.size));
   });
 
   document.getElementById('shape-list').addEventListener('click', (e) => {
@@ -1417,39 +1424,82 @@
   // ---------- Global play ----------
 
   // Playing a random person needs a matchmaking server, which doesn't exist
-  // yet. Until it does, a search shows what it will look like, then says so.
-  // When there is one, startSearching is where it gets asked for a match.
-  const findMatchBtn = document.getElementById('find-match');
+  // yet. The menus are real: Classic or a random shape, then a size, then it
+  // searches. With no server the search can't find anyone, so after a moment
+  // it says so. startSearching is where the request will go.
   const globalStatusEl = document.getElementById('global-status');
+  const cancelSearchBtn = document.getElementById('cancel-search');
   const SEARCH_MS = 2500; // how long the stand-in search runs
+  // The full board at each size. Random never picks one: that's Classic.
+  const CLASSIC = { 8: 'full', 10: 'big' };
   let searchTimer = null;
+  let searchShape = null; // the board this player would host, if matched
 
-  function showGlobal() {
-    stopSearching();
-    showMenuPage('global');
-  }
+  const randomShape = (size) => {
+    const ids = SHAPE_IDS.filter((id) => SHAPES[id].size === size && id !== CLASSIC[size]);
+    return ids[Math.floor(Math.random() * ids.length)];
+  };
 
-  function startSearching() {
-    findMatchBtn.classList.remove('primary');
-    findMatchBtn.innerHTML = 'Cancel <small>Stop looking</small>';
-    setNote(globalStatusEl, 'Looking for a player');
+  function startSearching(board, size) {
+    // Whoever ends up hosting plays on the board they picked, the same as
+    // Create Game. A random one stays a surprise until the match starts.
+    searchShape = board === 'classic' ? CLASSIC[size] : randomShape(size);
+    document.getElementById('search-board').textContent =
+      `${board === 'classic' ? 'Classic' : 'Random shape'} · ${size}×${size}`;
+    cancelSearchBtn.textContent = 'Cancel';
     globalStatusEl.classList.add('searching');
+    setNote(globalStatusEl, 'Looking for a player');
+    showMenuPage('search');
+    clearTimeout(searchTimer);
     searchTimer = setTimeout(() => {
-      stopSearching(menuPages.global.hidden ? '' : "Global play isn't ready yet. Check back soon!");
+      searchTimer = null;
+      globalStatusEl.classList.remove('searching');
+      setNote(globalStatusEl, "Global play isn't ready yet. Check back soon!");
+      cancelSearchBtn.textContent = 'Back';
     }, SEARCH_MS);
   }
 
-  function stopSearching(note = '') {
+  cancelSearchBtn.addEventListener('click', () => {
     clearTimeout(searchTimer);
     searchTimer = null;
-    findMatchBtn.classList.add('primary');
-    findMatchBtn.innerHTML = 'Find a Match <small>Get paired with a random player</small>';
-    globalStatusEl.classList.remove('searching');
-    setNote(globalStatusEl, note);
-  }
+    showMenuPage('global');
+  });
 
-  document.getElementById('open-global').addEventListener('click', showGlobal);
-  findMatchBtn.addEventListener('click', () => (searchTimer ? stopSearching() : startSearching()));
+  document.getElementById('open-global').addEventListener('click', () => showMenuPage('global'));
+  // Other sizes and shapes are for once the checkers are knocked over, as
+  // everywhere else; until then Classic means the ordinary board.
+  document.getElementById('global-classic').addEventListener('click', () => {
+    if (!shapesOn) startSearching('classic', 8);
+    else chooseSize('global', (size) => startSearching('classic', size));
+  });
+  document.getElementById('global-random').addEventListener('click', () =>
+    chooseSize('global', (size) => startSearching('random', size)));
+
+  // Both players' Game Center accounts, face to face, as a match begins.
+  // Each is { name, photo }, where photo is an image URL, or nothing for
+  // their first letter instead. Matchmaking will call this when it finds
+  // someone; resolves once it's gone and the game can start.
+  function showVersus(you, them, shape, ms = 2600) {
+    const el = document.getElementById('versus');
+    const fill = (side, player) => {
+      const avatar = el.querySelector(`.${side} .versus-avatar`);
+      avatar.style.backgroundImage = player.photo ? `url("${player.photo}")` : '';
+      avatar.textContent = player.photo ? '' : (player.name.trim()[0] || '?').toUpperCase();
+      el.querySelector(`.${side} .versus-name`).textContent = player.name;
+    };
+    fill('you', you);
+    fill('them', them);
+    const { name, size } = SHAPES[shape];
+    el.querySelector('.versus-board').textContent = `${name} · ${size}×${size}`;
+    el.classList.remove('show');
+    el.hidden = false;
+    void el.offsetWidth; // restart the animation
+    el.classList.add('show');
+    return new Promise((resolve) => setTimeout(() => {
+      el.hidden = true;
+      resolve();
+    }, ms));
+  }
 
   // ---------- Settings ----------
 
