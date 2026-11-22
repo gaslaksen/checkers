@@ -932,6 +932,7 @@
       if (mode === 'bot' && !game.drawn) botReact(botLost ? 'lost' : 'won', { always: true });
       showResultSoon(mode === 'bot' && !game.drawn ? 1600 : 700);
     }
+    botTakesRewards();
     scheduleBot();
   }
 
@@ -959,11 +960,7 @@
     // time spent thinking counts toward BOT_DELAY.
     setTimeout(() => {
       if (mySession !== session) return;
-      // Take any reward it has earned first — it can't move until it has.
-      while (game.pendingReward(BOT_COLOR)) {
-        const choice = Bot.chooseReward(game, BOT_COLOR, botLevel);
-        if (!applyReward(BOT_COLOR, choice.ability, choice.replace || null)) break;
-      }
+      botTakesRewards(); // normally done already, at the end of the last turn
       if (game.over || !isBotTurn()) return;
       // Once he's angry, about half his turns aren't turns at all.
       if (botMad && sinceCheat > 0 && Math.random() < CHEAT_CHANCE && cheatTurn(mySession)) {
@@ -979,6 +976,17 @@
         if (mySession === session) playBotSteps(steps, mySession);
       }, wait);
     }, 50);
+  }
+
+  // The bot picks its rewards as soon as it has them, the way a player
+  // chooses straight after a jump, so they show up in its panel right away.
+  // That includes comeback rewards it earns during your turn.
+  function botTakesRewards() {
+    if (mode !== 'bot' || game.over) return;
+    while (game.pendingReward(BOT_COLOR)) {
+      const choice = Bot.chooseReward(game, BOT_COLOR, botLevel);
+      if (!applyReward(BOT_COLOR, choice.ability, choice.replace || null)) break;
+    }
   }
 
   // Plays the bot's turn one step at a time so each part is visible.
@@ -1749,7 +1757,7 @@
   function applyReward(color, ability, replace) {
     const result = game.chooseReward(color, ability, replace);
     if (!result) return false;
-    rewardEl.hidden = true;
+    if (color === rewardColor) rewardEl.hidden = true; // not someone else's choice
     if (result.ability) {
       const info = ABILITY_INFO[result.ability];
       sfx(`reward${capitalize(result.tier)}`);
