@@ -185,13 +185,20 @@ button {
   width: min(300px, 100%);
 }
 
-/* Settings sits in the corner as a round gear, out of the way of the menu.
-   It's part of the menu screen, so it's there on every menu and gone during
-   a game. Kept clear of the status bar and notch: taps there never arrive. */
-.settings-btn {
+/* How to Play and Settings sit in the corner as round buttons, out of the
+   way of the menu. They're part of the menu screen, so they're there on every
+   menu and gone during a game. Kept clear of the status bar and notch: taps
+   there never arrive. */
+.corner-buttons {
   position: fixed;
   top: calc(env(safe-area-inset-top, 0px) + 12px);
   right: calc(env(safe-area-inset-right, 0px) + 12px);
+  display: flex;
+  gap: 10px;
+  z-index: 20;
+}
+
+.corner-btn {
   width: 46px;
   height: 46px;
   padding: 0;
@@ -200,7 +207,6 @@ button {
   border-radius: 50%;
   font-size: 1.35rem;
   line-height: 1;
-  z-index: 20;
 }
 
 .menu-btn {

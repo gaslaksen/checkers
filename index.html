@@ -17,7 +17,10 @@
 </head>
 <body>
   <section id="menu" class="menu">
-    <button id="open-settings" type="button" class="settings-btn" aria-label="Settings" title="Settings">⚙️</button>
+    <div class="corner-buttons">
+      <button id="how-to-play" type="button" class="corner-btn" aria-label="How to Play" title="How to Play">❓</button>
+      <button id="open-settings" type="button" class="corner-btn" aria-label="Settings" title="Settings">⚙️</button>
+    </div>
     <div id="menu-tokens" class="menu-tokens" aria-hidden="true">
       <div class="token black"><div class="disc">
         <svg class="crown" viewBox="0 0 24 24"><path d="M3 18.5h18L19.6 8l-4.6 4.2L12 5l-3 7.2L4.4 8z"/></svg>
@@ -32,10 +35,6 @@
       <button id="open-multiplayer" type="button" class="menu-btn">
         Multiplayer
         <small>Play against a person</small>
-      </button>
-      <button id="how-to-play" type="button" class="menu-btn">
-        How to Play
-        <small>Rules and abilities</small>
       </button>
       <button id="install-app" type="button" class="menu-btn" hidden>
         Install
