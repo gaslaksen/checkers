@@ -922,6 +922,10 @@ a.menu-back {
 
 .guide-icon { font-size: 1.1rem; }
 
+/* Apple draws Split Move's division sign in dark grey, which nearly vanishes
+   on the dark panels. Brightened, it's a light grey like the other icons. */
+.icon-splitMove { display: inline-block; filter: brightness(2.8); }
+
 /* As far as anyone can tell, an emoji in a sentence. No pointer, and no grey
    tap highlight on iOS — either one would give it away. */
 .guide-smiley {

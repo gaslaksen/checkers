@@ -59,6 +59,10 @@
   };
   const TIER_NAME = { common: 'Common', rare: 'Rare', epic: 'Epic' };
 
+  // An ability's emoji inside a sentence, tagged like the others (icon-<id>)
+  // so the CSS can adjust one that needs it.
+  const iconTag = (id) => `<span class="icon-${id}">${ABILITY_INFO[id].icon}</span>`;
+
   // Inside the app: draw under the notch and home bar (the CSS keeps clear
   // of them), and drop the web page habits of zooming in. Pinch-zoom is
   // off in the app's settings too; this covers the page's side of it.
@@ -903,7 +907,7 @@
     // no visible reason.
     if (!isHuman(color) || mode === 'online') {
       const info = ABILITY_INFO[action.ability];
-      toast(`${label(color)} used ${info.icon} ${info.name}`, tierOf(action.ability));
+      toast(`${label(color)} used ${iconTag(action.ability)} ${info.name}`, tierOf(action.ability));
     }
     render();
     abilityEffect(action);
@@ -1289,7 +1293,7 @@
       const usable = controllable && game.abilityActions(ability).length > 0;
       return `<button type="button" class="slot tier-${tier}${activeAbility === ability ? ' active' : ''}"
         data-ability="${ability}" title="${info.name}: ${info.help}" ${usable ? '' : 'disabled'}>
-        <span class="slot-icon" aria-hidden="true">${info.icon}</span>
+        <span class="slot-icon icon-${ability}" aria-hidden="true">${info.icon}</span>
         <span class="slot-name">${info.name}</span></button>`;
     });
 
@@ -1618,7 +1622,7 @@
   const optionButton = (id) => {
     const info = ABILITY_INFO[id];
     return `<button type="button" class="reward-option tier-${tierOf(id)}" data-ability="${id}">
-      <span class="icon" aria-hidden="true">${info.icon}</span>
+      <span class="icon icon-${id}" aria-hidden="true">${info.icon}</span>
       <span class="name">${info.name}</span>
       <span class="what">${info.help}</span></button>`;
   };
@@ -1750,7 +1754,7 @@
       const info = ABILITY_INFO[result.ability];
       sfx(`reward${capitalize(result.tier)}`);
       const swapped = result.replaced ? ` instead of ${ABILITY_INFO[result.replaced].name}` : '';
-      toast(`${label(color)} took ${info.icon} ${info.name}${swapped}`, result.tier);
+      toast(`${label(color)} took ${iconTag(result.ability)} ${info.name}${swapped}`, result.tier);
     } else {
       toast(`${label(color)} passed on a ${TIER_NAME[result.tier]} ability`, result.tier);
     }
@@ -1789,7 +1793,7 @@
     const rows = ['common', 'rare', 'epic'].map((tier) => {
       const list = ABILITY_IDS.filter((id) => tierOf(id) === tier).map((id) => {
         const info = ABILITY_INFO[id];
-        return `<li><span class="guide-icon" aria-hidden="true">${info.icon}</span>
+        return `<li><span class="guide-icon icon-${id}" aria-hidden="true">${info.icon}</span>
           <span><b>${info.name}</b> — ${info.help}</span></li>`;
       }).join('');
       return `<h3 class="guide-tier tier-${tier}">${TIER_NAME[tier]}
