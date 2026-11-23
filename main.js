@@ -436,7 +436,8 @@
     // The gear is on every menu, except the one it opens.
     document.getElementById('open-settings').hidden = page === 'settings';
     // While a search's two checkers circle, the pair above the title steps
-    // aside, so there aren't four on screen.
+    // aside so there aren't four on screen, and so do How to Play and
+    // Settings.
     menuEl.classList.toggle('searching', page === 'search' && menuPages.search.classList.contains('searching'));
   }
 

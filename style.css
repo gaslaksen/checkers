@@ -845,6 +845,8 @@ a.menu-back {
 #menu-search:not(.searching) .search-orbit { display: none; }
 /* Their space stays, so the title doesn't jump when they come back. */
 #menu.searching .menu-tokens { visibility: hidden; }
+/* How to Play and Settings step aside too: Cancel is the only way out. */
+#menu.searching .corner-buttons { display: none; }
 
 .orbit-arm {
   position: absolute;
