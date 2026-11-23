@@ -58,7 +58,11 @@
       <p class="menu-label">Global Play</p>
       <p id="search-board" class="search-board"></p>
       <p id="global-status" class="menu-note" aria-live="polite"></p>
-      <button id="cancel-search" type="button" class="menu-btn">Cancel</button>
+      <div class="search-orbit" aria-hidden="true">
+        <div class="orbit-arm"><div class="token red"><div class="disc"></div></div></div>
+        <div class="orbit-arm"><div class="token black"><div class="disc"></div></div></div>
+      </div>
+      <button id="cancel-search" type="button" class="menu-back search-back">Cancel</button>
     </div>
     <div id="menu-settings" class="menu-buttons" hidden>
       <p class="menu-label">Settings</p>

@@ -1476,13 +1476,13 @@
     document.getElementById('search-board').textContent =
       `${board === 'classic' ? 'Classic' : 'Random shape'} · ${size}×${size}`;
     cancelSearchBtn.textContent = 'Cancel';
-    globalStatusEl.classList.add('searching');
+    menuPages.search.classList.add('searching'); // the circling checkers
     setNote(globalStatusEl, 'Looking for a player');
     showMenuPage('search');
     clearTimeout(searchTimer);
     searchTimer = setTimeout(() => {
       searchTimer = null;
-      globalStatusEl.classList.remove('searching');
+      menuPages.search.classList.remove('searching');
       setNote(globalStatusEl, "Global play isn't ready yet. Check back soon!");
       cancelSearchBtn.textContent = 'Back';
     }, SEARCH_MS);
