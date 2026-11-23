@@ -435,6 +435,9 @@
     for (const [name, el] of Object.entries(menuPages)) el.hidden = name !== page;
     // The gear is on every menu, except the one it opens.
     document.getElementById('open-settings').hidden = page === 'settings';
+    // While a search's two checkers circle, the pair above the title steps
+    // aside, so there aren't four on screen.
+    menuEl.classList.toggle('searching', page === 'search' && menuPages.search.classList.contains('searching'));
   }
 
   function startGame(newMode, level, shape = 'full') {
@@ -1483,6 +1486,7 @@
     searchTimer = setTimeout(() => {
       searchTimer = null;
       menuPages.search.classList.remove('searching');
+      menuEl.classList.remove('searching');
       setNote(globalStatusEl, "Global play isn't ready yet. Check back soon!");
       cancelSearchBtn.textContent = 'Back';
     }, SEARCH_MS);
@@ -1491,6 +1495,7 @@
   cancelSearchBtn.addEventListener('click', () => {
     clearTimeout(searchTimer);
     searchTimer = null;
+    menuPages.search.classList.remove('searching');
     showMenuPage('global');
   });
 

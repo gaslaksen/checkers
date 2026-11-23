@@ -843,6 +843,8 @@ a.menu-back {
   margin: 14px auto 0;
 }
 #menu-search:not(.searching) .search-orbit { display: none; }
+/* Their space stays, so the title doesn't jump when they come back. */
+#menu.searching .menu-tokens { visibility: hidden; }
 
 .orbit-arm {
   position: absolute;
