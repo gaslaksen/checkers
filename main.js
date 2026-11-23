@@ -297,7 +297,7 @@
   for (const btn of document.querySelectorAll('.to-menu')) btn.addEventListener('click', askLeaveGame);
   // Menu buttons and the like get a quiet tick.
   document.addEventListener('click', (e) => {
-    if (e.target.closest('.menu-btn, .menu-back, .to-menu, .corner-btn, #join-game')) Sound.play('click');
+    if (e.target.closest('.menu-btn, .menu-back, .to-menu, .corner-btn, .choice, #join-game')) Sound.play('click');
   });
   document.getElementById('confirm-yes').addEventListener('click', () => {
     confirmEl.hidden = true;
@@ -324,9 +324,10 @@
   // that and you get to choose what shape the board is.
   const tokensEl = document.getElementById('menu-tokens');
 
-  // Every menu with a way to a board: the first one, the bot one, the two
-  // multiplayer ones (Same Device, and Create Game online) and Global Play.
-  const BOARD_MENUS = ['main', 'difficulty', 'multiplayer', 'online', 'global'];
+  // Every menu with a way to a board: the first one, the bot one, and the two
+  // multiplayer ones (Same Device, and Create Game online). Global Play has
+  // its own board choice, so it doesn't need them.
+  const BOARD_MENUS = ['main', 'difficulty', 'multiplayer', 'online'];
 
   tokensEl.addEventListener('click', () => {
     if (BOARD_MENUS.every((page) => menuPages[page].hidden)) return;
@@ -1493,15 +1494,38 @@
     showMenuPage('global');
   });
 
-  document.getElementById('open-global').addEventListener('click', () => showMenuPage('global'));
-  // Other sizes and shapes are for once the checkers are knocked over, as
-  // everywhere else; until then Classic means the ordinary board.
-  document.getElementById('global-classic').addEventListener('click', () => {
-    if (!shapesOn) startSearching('classic', 8);
-    else chooseSize('global', (size) => startSearching('classic', size));
+  // The board and size to search for, all on one screen: tap a choice in
+  // each row, then Find a Match. Remembered until the app closes.
+  const globalChoice = { board: 'classic', size: 8 };
+
+  function renderGlobal() {
+    const n = globalChoice.size;
+    const choice = (attr, value, picture, name, note, on) =>
+      `<button type="button" class="choice" data-${attr}="${value}" aria-pressed="${on}">${picture}
+        <b>${name}</b><small>${note}</small></button>`;
+    // The board pictures follow the size picked below them.
+    document.getElementById('global-board').innerHTML =
+      choice('board', 'classic', boardPicture(n), 'Classic', 'The usual board', globalChoice.board === 'classic') +
+      choice('board', 'random', `<span class="mystery">${boardPicture(n)}</span>`, 'Random Shape',
+        'A surprise', globalChoice.board === 'random');
+    document.getElementById('global-size').innerHTML = BOARD_SIZES.map(({ name, size }) =>
+      choice('size', size, boardPicture(size), name, `${size}&times;${size}`, globalChoice.size === size)
+    ).join('');
+  }
+
+  document.getElementById('open-global').addEventListener('click', () => {
+    renderGlobal();
+    showMenuPage('global');
   });
-  document.getElementById('global-random').addEventListener('click', () =>
-    chooseSize('global', (size) => startSearching('random', size)));
+  menuPages.global.addEventListener('click', (e) => {
+    const pick = e.target.closest('.choice');
+    if (!pick) return;
+    if (pick.dataset.board) globalChoice.board = pick.dataset.board;
+    if (pick.dataset.size) globalChoice.size = Number(pick.dataset.size);
+    renderGlobal();
+  });
+  document.getElementById('find-match').addEventListener('click', () =>
+    startSearching(globalChoice.board, globalChoice.size));
 
   // Both players' Game Center accounts, face to face, as a match begins.
   // Each is { name, photo }, where photo is an image URL, or nothing for
@@ -1916,6 +1940,7 @@
     `It's a draw after 40 moves each with no capture and no new king.`,
     `You can send an emote too — tap the <span class="guide-smiley" role="img" aria-label="smiley face">🙂</span> at the top of the screen.`,
     'Playing online: one of you creates a game and shares the code, the other taps Join Game and types it in — like RNDY.',
+    'Want a different board? Tap the two checkers above the title to switch them, and you can choose a board size and shape before each game.',
     // Only the website needs telling how to stay on your phone.
     !IS_APP && 'To keep it on your phone: Android — Install from the menu; iPhone — Share, then Add to Home Screen.',
   ].filter(Boolean);

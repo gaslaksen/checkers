@@ -150,12 +150,6 @@ button {
 #menu.shapes-on #open-join { order: 1; }
 #menu.shapes-on #create-game { order: 2; }
 #menu.shapes-on #menu-online .menu-back { order: 3; }
-#menu.shapes-on #menu-global .menu-label { order: 0; }
-#menu.shapes-on #global-random { order: 1; }
-#menu.shapes-on #global-classic { order: 2; }
-#menu.shapes-on #menu-global .menu-back { order: 3; }
-/* Random Shape only exists with the checkers knocked over. */
-#menu:not(.shapes-on) #global-random { display: none; }
 
 .title {
   margin: 0 0 40px;
@@ -855,6 +849,49 @@ a.menu-back {
 
 @keyframes searching-spin {
   to { transform: rotate(360deg); }
+}
+
+/* Global Play's choices: a labelled row of two tiles each, a little board
+   picture on top. The one picked has a gold edge. */
+.choice-label {
+  margin: 4px 0 -4px;
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  text-align: left;
+  color: var(--muted);
+}
+
+.choice-row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+
+.choice {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  padding: 12px 8px 10px;
+  border: 2px solid #45464d;
+  border-radius: 12px;
+}
+.choice[aria-pressed="true"] { border-color: var(--gold); background: #34312a; }
+.choice .shape-grid { width: 44px; height: 44px; margin-bottom: 4px; }
+.choice b { font-size: 0.95rem; }
+.choice small { font-size: 0.72rem; color: var(--muted); }
+
+/* Random Shape's picture: a board with a question mark over it. */
+.mystery { position: relative; display: block; }
+.mystery::after {
+  content: "?";
+  position: absolute;
+  inset: 0 0 4px;
+  display: grid;
+  place-items: center;
+  border-radius: 3px;
+  background: rgba(0, 0, 0, 0.5);
+  font-size: 1.5rem;
+  font-weight: 900;
+  color: #fff;
 }
 
 /* What a global search is for, above the spinner. */
