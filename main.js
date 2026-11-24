@@ -654,10 +654,10 @@
     const code = codeDisplayEl.textContent.trim();
     if (!/^[A-Z0-9]+$/.test(code)) return;
     const url = location.href.split('?')[0].split('#')[0];
-    const text = `Play Super Checkers with me — join with code ${code}: ${url}`;
+    const text = `Play Chaos Checkers with me — join with code ${code}: ${url}`;
     try {
       if (navigator.share) {
-        await navigator.share({ title: 'Super Checkers', text, url });
+        await navigator.share({ title: 'Chaos Checkers', text, url });
         return;
       }
       await navigator.clipboard.writeText(text);
@@ -1519,6 +1519,10 @@
     ).join('');
   }
 
+  // Not in the app until there's a matchmaking server: Apple turns away apps
+  // with features that only say "coming soon".
+  document.getElementById('open-global').hidden = IS_APP;
+
   document.getElementById('open-global').addEventListener('click', () => {
     renderGlobal();
     showMenuPage('global');
@@ -1571,9 +1575,10 @@
 
   // ---------- Settings ----------
 
-  // Not ready yet, so not shown: a privacy policy page to link to, and
-  // something to buy. Purchases will only ever be offered in the app.
-  const PRIVACY_URL = null;
+  // The privacy policy, which the App Store wants reachable from inside the
+  // app. Not ready yet, so not shown: something to buy. Purchases will only
+  // ever be offered in the app.
+  const PRIVACY_URL = 'https://gaslaksen.github.io/checkers/privacy.html';
   const PURCHASES_READY = false;
 
   const soundToggle = document.getElementById('toggle-sound');

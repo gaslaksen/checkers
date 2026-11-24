@@ -158,7 +158,7 @@ button {
   line-height: 1;
 }
 
-.title-super {
+.title-top {
   font-size: clamp(1.1rem, 4vw, 1.5rem);
   font-weight: 700;
   letter-spacing: 0.5em;
@@ -801,7 +801,7 @@ a.menu-back {
   .menu-tokens { display: none; }
   .title { margin-bottom: 14px; }
   .title-main { font-size: clamp(2rem, 11vh, 3rem); }
-  .title-super { font-size: 0.85rem; }
+  .title-top { font-size: 0.85rem; }
 }
 
 /* ---------- Two players on one device ---------- */

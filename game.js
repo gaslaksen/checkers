@@ -1,4 +1,4 @@
-// Super Checkers rules engine: American checkers (jumping optional) plus
+// Chaos Checkers rules engine: American checkers (jumping optional) plus
 // abilities earned by jumping. Pure game state and rules — no DOM.
 
 // How many squares across the board is. Most boards are the usual eight,

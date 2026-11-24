@@ -1,4 +1,4 @@
-# Super Checkers
+# Chaos Checkers
 
 Checkers where jumping pieces earns you abilities.
 

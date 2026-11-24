@@ -1,6 +1,6 @@
 {
-  "name": "Super Checkers",
-  "short_name": "Super Checkers",
+  "name": "Chaos Checkers",
+  "short_name": "Chaos Checkers",
   "description": "Checkers where jumping pieces earns you abilities.",
   "start_url": "./",
   "scope": "./",

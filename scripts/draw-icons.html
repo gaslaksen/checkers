@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="utf-8">
-  <title>Super Checkers icons</title>
+  <title>Chaos Checkers icons</title>
   <style>
     body { margin: 24px; background: #888; font-family: system-ui, sans-serif; }
     figure { display: inline-block; margin: 0 24px 24px 0; vertical-align: top; }
@@ -124,7 +124,7 @@
       ctx.fillStyle = COLORS.gold;
       ctx.font = `700 ${24 * k}px system-ui, -apple-system, sans-serif`;
       ctx.letterSpacing = `${12 * k}px`;
-      ctx.fillText('SUPER', n / 2 + 6 * k, top + 80 * k);
+      ctx.fillText('CHAOS', n / 2 + 6 * k, top + 80 * k);
 
       ctx.letterSpacing = `${-1.7 * k}px`;
       ctx.font = `900 ${88 * k}px system-ui, -apple-system, sans-serif`;
@@ -145,7 +145,7 @@
         where: 'ios/App/App/Assets.xcassets/AppIcon.appiconset/' },
       // Shown 400 points square, so 1200 pixels covers a 3× screen.
       { name: 'launch-logo.png', size: 1200, draw: drawLaunchLogo,
-        where: 'ios/App/App/Assets.xcassets/Splash.imageset/' },
+        where: 'ios/App/App/Assets.xcassets/LaunchLogo.imageset/' },
     ];
 
     const canvases = {};
