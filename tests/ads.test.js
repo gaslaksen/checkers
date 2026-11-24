@@ -110,6 +110,20 @@ module.exports = {
     fresh();
   },
 
+  async 'the network warms up between games once the free games are over'() {
+    const network = fakeNetwork();
+    let warmUps = 0;
+    network.warmUp = async () => { warmUps++; };
+    fresh(network);
+    await playGames(Ads.FREE_GAMES - 1);
+    assert.strictEqual(warmUps, 0, 'nothing asked during the free games');
+    await playGames(1);
+    assert.strictEqual(warmUps, 1);
+    network.warmUp = async () => { throw new Error('offline'); };
+    await playGames(1); // a failed warm-up doesn't stop the game
+    fresh();
+  },
+
   'only the kinds it knows about'() {
     fresh(fakeNetwork());
     assert.strictEqual(Ads.available('banner'), false);

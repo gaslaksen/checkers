@@ -16,6 +16,7 @@
 		504EC3121FED79650016851F /* LaunchScreen.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 504EC3101FED79650016851F /* LaunchScreen.storyboard */; };
 		50B271D11FEDC1A000F3C39B /* public in Resources */ = {isa = PBXBuildFile; fileRef = 50B271D01FEDC1A000F3C39B /* public */; };
 		9582B6832FE993A70072D4E8 /* SceneDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9582B6822FE993A50072D4E8 /* SceneDelegate.swift */; };
+		A7C3E1A02F80000100A1B2C1 /* PurchasesPlugin.swift in Sources */ = {isa = PBXBuildFile; fileRef = A7C3E1A12F80000100A1B2C1 /* PurchasesPlugin.swift */; };
 		A7C3E1902F80000100A1B2C1 /* GameCenterPlugin.swift in Sources */ = {isa = PBXBuildFile; fileRef = A7C3E1912F80000100A1B2C1 /* GameCenterPlugin.swift */; };
 		A7C3E1922F80000100A1B2C1 /* MainViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = A7C3E1932F80000100A1B2C1 /* MainViewController.swift */; };
 /* End PBXBuildFile section */
@@ -31,6 +32,7 @@
 		504EC3131FED79650016851F /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		50B271D01FEDC1A000F3C39B /* public */ = {isa = PBXFileReference; lastKnownFileType = folder; path = public; sourceTree = "<group>"; };
 		9582B6822FE993A50072D4E8 /* SceneDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SceneDelegate.swift; sourceTree = "<group>"; };
+		A7C3E1A12F80000100A1B2C1 /* PurchasesPlugin.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PurchasesPlugin.swift; sourceTree = "<group>"; };
 		A7C3E1912F80000100A1B2C1 /* GameCenterPlugin.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GameCenterPlugin.swift; sourceTree = "<group>"; };
 		A7C3E1932F80000100A1B2C1 /* MainViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MainViewController.swift; sourceTree = "<group>"; };
 		A7C3E1942F80000100A1B2C1 /* App.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = App.entitlements; sourceTree = "<group>"; };
@@ -72,6 +74,7 @@
 				9582B6822FE993A50072D4E8 /* SceneDelegate.swift */,
 				A7C3E1932F80000100A1B2C1 /* MainViewController.swift */,
 				A7C3E1912F80000100A1B2C1 /* GameCenterPlugin.swift */,
+				A7C3E1A12F80000100A1B2C1 /* PurchasesPlugin.swift */,
 				A7C3E1942F80000100A1B2C1 /* App.entitlements */,
 				50379B222058CBB4000EE86E /* capacitor.config.json */,
 				504EC3071FED79650016851F /* AppDelegate.swift */,
@@ -170,6 +173,7 @@
 				9582B6832FE993A70072D4E8 /* SceneDelegate.swift in Sources */,
 				A7C3E1922F80000100A1B2C1 /* MainViewController.swift in Sources */,
 				A7C3E1902F80000100A1B2C1 /* GameCenterPlugin.swift in Sources */,
+				A7C3E1A02F80000100A1B2C1 /* PurchasesPlugin.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -310,6 +314,7 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CODE_SIGN_ENTITLEMENTS = App/App.entitlements;
+				CAPACITOR_DEBUG = true;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_TEAM = N5M8JZR7R3;
@@ -334,6 +339,7 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CODE_SIGN_ENTITLEMENTS = App/App.entitlements;
+				CAPACITOR_DEBUG = false;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_TEAM = N5M8JZR7R3;

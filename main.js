@@ -1576,17 +1576,20 @@
   // ---------- Settings ----------
 
   // The privacy policy, which the App Store wants reachable from inside the
-  // app. Not ready yet, so not shown: something to buy. Purchases will only
-  // ever be offered in the app.
+  // app. Purchases are only ever offered in the app (see shop.js).
   const PRIVACY_URL = 'https://gaslaksen.github.io/checkers/privacy.html';
-  const PURCHASES_READY = false;
 
   const soundToggle = document.getElementById('toggle-sound');
+  const removeAdsBtn = document.getElementById('remove-ads');
+  const restoreBtn = document.getElementById('restore-purchases');
+  const adPrivacyBtn = document.getElementById('ad-privacy');
+  const shopStatus = document.getElementById('shop-status');
 
   // Settings opens from any menu, and Back goes to whichever one that was.
   function showSettings() {
     const from = Object.keys(menuPages).find((name) => !menuPages[name].hidden) || 'main';
     menuPages.settings.querySelector('[data-back]').dataset.back = from;
+    shopSays('');
     renderSettings();
     showMenuPage('settings');
   }
@@ -1594,12 +1597,18 @@
   function renderSettings() {
     const on = Store.get('sound');
     soundToggle.setAttribute('aria-checked', String(on));
-    const shop = IS_APP && PURCHASES_READY;
-    document.getElementById('remove-ads').hidden = !shop || Store.get('removeAds');
-    document.getElementById('restore-purchases').hidden = !shop;
+    removeAdsBtn.hidden = !Shop.canBuy();
+    if (Shop.price()) removeAdsBtn.querySelector('small').textContent = `No more ads between games · ${Shop.price()}`;
+    restoreBtn.hidden = !Shop.canRestore();
+    adPrivacyBtn.hidden = !AdMob?.needsPrivacyChoices();
     const privacy = document.getElementById('privacy-policy');
     privacy.hidden = !PRIVACY_URL;
     if (PRIVACY_URL) privacy.href = PRIVACY_URL;
+  }
+
+  function shopSays(text, error = false) {
+    shopStatus.textContent = text;
+    shopStatus.classList.toggle('error', error);
   }
 
   // Turning it on, you hear the tap that did it; turning it off, you don't.
@@ -1607,8 +1616,42 @@
     const on = !Store.get('sound');
     Store.set('sound', on);
     Sound.setEnabled(on);
+    AdMob?.setMuted(!on);
     renderSettings();
   });
+
+  // Apple shows its own sheet for paying; these buttons wait for it.
+  let shopping = false;
+  async function shop(button, action, results) {
+    if (shopping) return;
+    shopping = true;
+    button.disabled = true;
+    shopSays('');
+    const result = await action();
+    shopping = false;
+    button.disabled = false;
+    renderSettings();
+    const [text, error] = results[result] || ['', false];
+    shopSays(text, error);
+  }
+
+  removeAdsBtn.addEventListener('click', () => shop(removeAdsBtn, Shop.buy, {
+    purchased: ['Ads removed. Thank you!'],
+    pending: ['Waiting for approval. Ads go once it comes through.'],
+    failed: ["That didn't go through. Try again in a bit.", true],
+  }));
+
+  restoreBtn.addEventListener('click', () => shop(restoreBtn, Shop.restore, {
+    restored: ['Remove Ads is back. Thank you!'],
+    nothing: ['No purchases found for this Apple ID.'],
+    failed: ["Couldn't reach the App Store. Try again in a bit.", true],
+  }));
+
+  adPrivacyBtn.addEventListener('click', () => AdMob?.showPrivacyChoices());
+
+  // A purchase can finish later (a parent approving it), or the App Store
+  // can find one when the app opens.
+  Shop.onChange(renderSettings);
 
   Sound.setEnabled(Store.get('sound'));
   // The app's saved settings arrive a moment after it opens.

@@ -18,7 +18,11 @@ const Ads = (() => {
   // What an ad network provides: whether an ad of a kind is loaded and
   // ready, and a way to show one that resolves to true once it's been seen
   // through (for a rewarded ad, watched to the end).
-  //   { ready(kind) -> boolean, show(kind, reason) -> Promise<boolean> }
+  //   { ready(kind) -> boolean, show(kind, reason) -> Promise<boolean>,
+  //     warmUp() -> Promise }
+  // warmUp is optional: it's called between games once the free games are
+  // used up, so any questions the network must ask first (like Apple's
+  // "Allow tracking?") come then, and not the moment the app opens.
   let network = null;
   let showing = false; // one at a time, however fast the taps come
 
@@ -58,6 +62,13 @@ const Ads = (() => {
   // Call only between games. Resolves once any ad is gone, straight away
   // if there wasn't one.
   async function betweenGames() {
+    if (network?.warmUp && Store.get('gamesPlayed') >= FREE_GAMES) {
+      try {
+        await network.warmUp();
+      } catch (e) {
+        // No ads this time, then.
+      }
+    }
     if (!betweenGamesDue() || !available('interstitial')) return false;
     // Counted even if the ad fails, so a bad connection can't make it pester.
     Store.set('lastAdAt', Store.get('gamesPlayed'));

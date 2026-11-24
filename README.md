@@ -68,6 +68,8 @@ Plain HTML, CSS and JavaScript — no build step for the website. Open
 - `store.js` — settings and results remembered between visits
 - `platform.js` — whether it's running in the iPhone app, and haptics and Game Center there
 - `ads.js` — when the app may show an ad (the website never does)
+- `admob.js` — fetching and showing Google AdMob ads in the app, and the consent and tracking questions before them
+- `shop.js` — the Remove Ads purchase in the app
 - `vendor/peerjs.min.js` — PeerJS 1.5.5, served from here rather than a CDN
 - `sw.js`, `manifest.json` — offline support and home-screen install
 
@@ -93,6 +95,28 @@ screen at the start of an online game. It only works once the app exists
 in App Store Connect with Game Center turned on; until then, and on the
 website, players are shown as You and Friend.
 
+### Ads and Remove Ads
+
+The app shows a Google AdMob ad between games (not in the first three
+games, then at most one every three), and a rewarded ad when a player asks
+to reroll their power-up choices. Remove Ads, a one-time purchase, stops
+the between-games ads; rerolls stay available. The website has neither.
+
+- `admob.js` holds the ad unit IDs and `ios/App/App/Info.plist` holds the
+  AdMob app ID (`GADApplicationIdentifier`). Both are Google's test values
+  until they're replaced with the app's own from the AdMob console. Debug
+  builds always show test ads, and a release build shows no ads until the
+  real unit IDs are filled in.
+- Before the first ad, Google's consent form appears where the law
+  requires it, then Apple's "Allow tracking?" question (skipped after
+  Remove Ads). Players the consent form applies to get Ad Privacy Choices
+  in Settings.
+- Purchases go through StoreKit, in a small plugin in the Xcode project
+  (`PurchasesPlugin.swift`). The product ID is
+  `com.supercheckers.game.removeads`. `ios/App/Products.storekit` lets a
+  Run from Xcode buy it with fake money before it exists in App Store
+  Connect.
+
 ## Tests
 
 ```
@@ -103,4 +127,4 @@ No dependencies — they run the rules engine and the bot directly and take
 about ten seconds. They cover the checkers rules, every ability, earning,
 choosing and rerolling rewards, the draw rule, the state copy that online
 play relies on, that the three bot difficulties stay in order, saving
-settings, and how often ads may show.
+settings, how often ads may show, the AdMob connection, and Remove Ads.

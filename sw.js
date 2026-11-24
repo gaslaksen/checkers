@@ -1,7 +1,7 @@
 // Offline support: keep a copy of the game so it opens with no connection.
 // Network first, so a published update is picked up as soon as it's available.
 
-const CACHE = 'super-checkers-v1';
+const CACHE = 'super-checkers-v2';
 const FILES = [
   './',
   'index.html',
@@ -12,6 +12,8 @@ const FILES = [
   'platform.js',
   'store.js',
   'ads.js',
+  'shop.js',
+  'admob.js',
   'sound.js',
   'main.js',
   'vendor/peerjs.min.js',
