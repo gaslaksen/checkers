@@ -105,8 +105,8 @@ button {
 .shape-btn {
   display: flex;
   align-items: center;
-  gap: 10px;
-  padding: 10px 12px;
+  gap: 6px;
+  padding: 10px 8px;
   border: 1px solid #45464d;
   border-radius: 12px;
   background: #2a2b31;
@@ -117,6 +117,8 @@ button {
   .shape-btn:hover { border-color: var(--gold); }
 }
 
+/* A little smaller in the tiles, so a name like "Diamond" fits beside it. */
+.shape-btn .shape-grid { width: 34px; height: 34px; }
 .shape-btn b { display: block; font-size: 1rem; }
 .shape-btn small { color: var(--muted); font-size: 0.72rem; }
 

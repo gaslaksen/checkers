@@ -1,3 +1,7 @@
 .DS_Store
 node_modules/
 www/
+
+# Working files for the App Store submission: screenshots, store text, and
+# review notes that describe the hidden bots (for Apple only).
+appstore/
