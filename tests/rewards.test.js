@@ -27,9 +27,9 @@ function oneJump(setUp = () => {}) {
 }
 
 module.exports = {
-  'the track runs Common, Common, Rare, Common, Epic and repeats'() {
+  'the track runs Common, Common, Rare, Rare, Epic and repeats'() {
     assert.deepStrictEqual([1, 2, 3, 4, 5, 6].map(rewardTier),
-      ['common', 'common', 'rare', 'common', 'epic', 'common']);
+      ['common', 'common', 'rare', 'rare', 'epic', 'common']);
   },
 
   'a jump offers two different abilities of the right tier'() {

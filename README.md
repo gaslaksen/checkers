@@ -28,7 +28,7 @@ repeats:
 
 | Jump | 1 | 2 | 3 | 4 | 5 |
 |---|---|---|---|---|---|
-| Reward | Common | Common | Rare | Common | Epic |
+| Reward | Common | Common | Rare | Rare | Epic |
 
 Losing pieces fills a **comeback meter**; jumping a piece empties it by one. At
 2, you get the next reward on your track, so falling behind isn't hopeless. You

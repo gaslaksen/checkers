@@ -9,7 +9,7 @@ const RED = 'red';
 const BLACK = 'black';
 
 // Tier of the ability earned on each jump; repeats after the last entry.
-const REWARD_TRACK = ['common', 'common', 'rare', 'common', 'epic'];
+const REWARD_TRACK = ['common', 'common', 'rare', 'rare', 'epic'];
 // Most abilities of each tier a player can hold; rewards beyond that are lost.
 const TIER_LIMITS = { common: 3, rare: 2, epic: 1 };
 // Losing a piece fills your comeback meter by one; jumping a piece empties it
